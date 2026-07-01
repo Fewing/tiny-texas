@@ -48,6 +48,7 @@ def test_fold_awards_pot_and_finishes_hand():
     assert runtime.last_result is not None
     assert runtime.last_result.reason == "fold"
     assert runtime.last_result.pot == 15
+    assert runtime.last_result.showdown_players == []
 
 
 def test_showdown_side_pot_awards_are_settled():
@@ -77,4 +78,27 @@ def test_showdown_side_pot_awards_are_settled():
     assert runtime.players[0].stack == 1150
     assert runtime.players[1].stack == 950
     assert runtime.players[2].stack == 900
-
+    assert result.showdown_players == [
+        {
+            "user_id": 1,
+            "username": "alice",
+            "seat_index": 0,
+            "hole_cards": ["As", "Ah"],
+            "hand_rank": "一对",
+        },
+        {
+            "user_id": 2,
+            "username": "bob",
+            "seat_index": 1,
+            "hole_cards": ["Ks", "Kh"],
+            "hand_rank": "一对",
+        },
+        {
+            "user_id": 3,
+            "username": "cara",
+            "seat_index": 2,
+            "hole_cards": ["Qs", "Qh"],
+            "hand_rank": "一对",
+        },
+    ]
+    assert result.to_public()["showdown_players"] == result.showdown_players

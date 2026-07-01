@@ -46,7 +46,19 @@
       </div>
     </aside>
   </div>
+  <div id="result-modal" class="result-modal" hidden>
+    <div class="result-dialog" role="dialog" aria-modal="true" aria-labelledby="result-title">
+      <div class="result-dialog-heading">
+        <div>
+          <p class="eyebrow">本手结算</p>
+          <h2 id="result-title">谁在收米</h2>
+        </div>
+        <button id="result-modal-close" class="ghost-button" type="button">关闭</button>
+      </div>
+      <div id="result-modal-body" class="result-dialog-body"></div>
+    </div>
+  </div>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}" defer></script>
+<script src="{{ url_for('static', path='/js/room.js') }}?v=20260701-2" defer></script>
 {% endblock %}

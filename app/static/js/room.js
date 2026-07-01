@@ -10,9 +10,17 @@ if (app) {
   const potEl = document.querySelector("#pot-value");
   const controlsEl = document.querySelector("#action-controls");
   const resultEl = document.querySelector("#result-box");
+  const resultModal = document.querySelector("#result-modal");
+  const resultModalBody = document.querySelector("#result-modal-body");
+  const resultModalClose = document.querySelector("#result-modal-close");
   const logEl = document.querySelector("#action-log");
   let socket = null;
   let state = initialState;
+  let shownResultHandNumber = null;
+
+  resultModalClose?.addEventListener("click", () => {
+    resultModal.hidden = true;
+  });
 
   function connect() {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -152,10 +160,61 @@ if (app) {
       resultEl.innerHTML = "";
       return;
     }
-    const awards = state.last_result.awards.map((award) => (
-      `<div><strong>${escapeHtml(award.username)}</strong> 赢得 ${award.amount}，牌型：${escapeHtml(handRankLabel(award.hand_rank))}</div>`
-    )).join("");
-    resultEl.innerHTML = `<h2>上一手牌</h2>${awards}`;
+    resultEl.innerHTML = `<h2>上一手牌</h2>${resultAwardsHtml(state.last_result)}`;
+    if (shownResultHandNumber !== state.last_result.hand_number) {
+      shownResultHandNumber = state.last_result.hand_number;
+      showResultModal(state.last_result);
+    }
+  }
+
+  function showResultModal(result) {
+    if (!resultModal || !resultModalBody) return;
+    resultModalBody.innerHTML = `
+      <div class="result-summary">
+        <span class="badge">第 ${result.hand_number} 手牌</span>
+        <span class="badge">底池 ${result.pot}</span>
+        <span class="badge">${result.reason === "showdown" ? "摊牌结算" : "弃牌结算"}</span>
+      </div>
+      <div>
+        <h3>赢家</h3>
+        ${resultAwardsHtml(result)}
+      </div>
+      ${result.community_cards.length ? `
+        <div>
+          <h3>公共牌</h3>
+          <div class="card-row">${result.community_cards.map(cardHtml).join("")}</div>
+        </div>
+      ` : ""}
+      ${result.showdown_players?.length ? `
+        <div>
+          <h3>开牌玩家</h3>
+          <div class="showdown-list">${result.showdown_players.map(showdownPlayerHtml).join("")}</div>
+        </div>
+      ` : ""}
+    `;
+    resultModal.hidden = false;
+  }
+
+  function resultAwardsHtml(result) {
+    return `<div class="award-list">${result.awards.map((award) => (
+      `<div class="award-row">
+        <strong>${escapeHtml(award.username)}</strong>
+        <span>赢得 ${award.amount} 筹码</span>
+        <span>${escapeHtml(handRankLabel(award.hand_rank))}</span>
+      </div>`
+    )).join("")}</div>`;
+  }
+
+  function showdownPlayerHtml(player) {
+    return `
+      <article class="showdown-row">
+        <div>
+          <strong>${escapeHtml(player.username)}</strong>
+          <span>${player.seat_index + 1} 号座位 / ${escapeHtml(handRankLabel(player.hand_rank))}</span>
+        </div>
+        <div class="card-row">${player.hole_cards.map(cardHtml).join("")}</div>
+      </article>
+    `;
   }
 
   function renderLog() {

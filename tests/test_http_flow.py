@@ -38,5 +38,6 @@ def test_register_create_room_flow(tmp_path, monkeypatch):
 
         assert room.status_code == 200
         assert 'id="room-app"' in room.text
+        assert 'id="result-modal"' in room.text
         assert "测试牌桌" in room.text
         assert "我们不生产米，我们只是慈善家的搬运工。" in room.text

@@ -402,6 +402,80 @@ input {
   gap: 8px;
 }
 
+.award-list,
+.showdown-list {
+  display: grid;
+  gap: 10px;
+}
+
+.award-row,
+.showdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 10px 12px;
+}
+
+.award-row span,
+.showdown-row span {
+  color: var(--muted);
+}
+
+.result-modal[hidden] {
+  display: none;
+}
+
+.result-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.66);
+}
+
+.result-dialog {
+  width: min(680px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  border: 1px solid rgba(227, 184, 77, 0.55);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+  padding: 22px;
+}
+
+.result-dialog-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+.result-dialog-body {
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+}
+
+.result-dialog-body h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.result-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .action-controls {
   display: grid;
   gap: 10px;
@@ -458,6 +532,12 @@ input {
   }
 
   .board {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .award-row,
+  .showdown-row {
     align-items: flex-start;
     flex-direction: column;
   }

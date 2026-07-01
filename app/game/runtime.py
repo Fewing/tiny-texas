@@ -100,6 +100,7 @@ class HandResult:
     community_cards: list[str]
     awards: list[dict]
     showdown_hands: dict[str, list[str]]
+    showdown_players: list[dict]
     summary: dict
     actions: list[ActionEvent]
     started_at: datetime
@@ -113,6 +114,7 @@ class HandResult:
             "community_cards": self.community_cards,
             "awards": self.awards,
             "showdown_hands": self.showdown_hands,
+            "showdown_players": self.showdown_players,
             "summary": self.summary,
         }
 
@@ -453,7 +455,7 @@ class RoomRuntime:
                 "hand_rank": "无人争夺",
             }
         ]
-        return self._complete_hand("fold", pot, awards, {})
+        return self._complete_hand("fold", pot, awards, {}, [])
 
     def _finish_showdown(self) -> HandResult:
         values = {
@@ -499,7 +501,17 @@ class RoomRuntime:
             str(player.user_id): list(player.hole_cards)
             for player in self._nonfolded_players()
         }
-        return self._complete_hand("showdown", self.pot, awards, showdown_hands)
+        showdown_players = [
+            {
+                "user_id": player.user_id,
+                "username": player.username,
+                "seat_index": player.seat_index,
+                "hole_cards": list(player.hole_cards),
+                "hand_rank": describe(values[player.seat_index]),
+            }
+            for player in sorted(self._nonfolded_players(), key=lambda item: item.seat_index)
+        ]
+        return self._complete_hand("showdown", self.pot, awards, showdown_hands, showdown_players)
 
     def _complete_hand(
         self,
@@ -507,6 +519,7 @@ class RoomRuntime:
         pot: int,
         awards: list[dict],
         showdown_hands: dict[str, list[str]],
+        showdown_players: list[dict],
     ) -> HandResult:
         ended_at = datetime.now(timezone.utc)
         result = HandResult(
@@ -517,10 +530,12 @@ class RoomRuntime:
             community_cards=list(self.community_cards),
             awards=awards,
             showdown_hands=showdown_hands,
+            showdown_players=showdown_players,
             summary={
                 "dealer_seat": self.dealer_seat,
                 "small_blind": self.config.small_blind,
                 "big_blind": self.config.big_blind,
+                "showdown_players": showdown_players,
             },
             actions=list(self.actions),
             started_at=self.hand_started_at or ended_at,
