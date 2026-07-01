@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////app/data/tiny_texas.db
+      COOKIE_SECURE: "false"
+    volumes:
+      - tiny_texas_data:/app/data
+
+volumes:
+  tiny_texas_data:
+

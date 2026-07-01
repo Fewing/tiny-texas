@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Tiny Texas{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/site.css') }}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">Tiny Texas</a>
+      <nav class="nav">
+        {% if current_user %}
+          <a href="/lobby">Lobby</a>
+          <span class="user-pill">{{ current_user.username }}</span>
+          <form method="post" action="/logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="ghost-button" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a href="/login">Log in</a>
+          <a class="primary-link" href="/register">Register</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
+

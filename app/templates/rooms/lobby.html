@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Lobby - Tiny Texas{% endblock %}
+{% block content %}
+<section class="lobby-grid">
+  <div class="create-room">
+    <h1>Lobby</h1>
+    <form method="post" action="/rooms" class="room-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>
+        Room name
+        <input name="name" value="{{ current_user.username }}'s table" maxlength="80" required>
+      </label>
+      <div class="form-row">
+        <label>
+          Seats
+          <input name="seat_count" type="number" min="2" max="9" value="6">
+        </label>
+        <label>
+          Small blind
+          <input name="small_blind" type="number" min="1" value="5">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>
+          Big blind
+          <input name="big_blind" type="number" min="2" value="10">
+        </label>
+        <label>
+          Buy-in
+          <input name="buy_in" type="number" min="40" value="1000">
+        </label>
+      </div>
+      <button class="button primary" type="submit">Create room</button>
+    </form>
+  </div>
+  <div class="room-list">
+    <h2>Open rooms</h2>
+    {% if rooms %}
+      <div class="table-list">
+        {% for room in rooms %}
+          <article class="room-row">
+            <div>
+              <strong>{{ room.name }}</strong>
+              <span>{{ room.code }} / {{ room.seat_count }} seats / {{ room.small_blind }}-{{ room.big_blind }}</span>
+            </div>
+            <a class="button secondary" href="/rooms/{{ room.code }}">Enter</a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No rooms yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+

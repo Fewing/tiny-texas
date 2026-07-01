@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }} - Tiny Texas{% endblock %}
+{% block content %}
+<section
+  id="room-app"
+  class="room-shell"
+  data-room-code="{{ room.code }}"
+  data-current-user-id="{{ current_user.id }}"
+>
+  <div class="room-heading">
+    <div>
+      <p class="eyebrow">Room {{ room.code }}</p>
+      <h1>{{ room.name }}</h1>
+      <p class="muted">{{ room.seat_count }} seats / blinds {{ room.small_blind }}-{{ room.big_blind }} / buy-in {{ room.buy_in }}</p>
+    </div>
+    <form method="post" action="/rooms/{{ room.code }}/join">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button secondary" type="submit">Join room</button>
+    </form>
+  </div>
+
+  {% if error %}<p class="alert">{{ error }}</p>{% endif %}
+
+  <div class="table-layout">
+    <div class="table-surface">
+      <div class="board">
+        <div>
+          <span class="label">Board</span>
+          <div id="community-cards" class="card-row"></div>
+        </div>
+        <div class="pot-box">
+          <span class="label">Pot</span>
+          <strong id="pot-value">0</strong>
+        </div>
+      </div>
+      <div id="seats" class="seat-grid"></div>
+    </div>
+    <aside class="table-panel">
+      <div id="connection-state" class="status-line">Connecting...</div>
+      <div id="result-box" class="result-box"></div>
+      <div id="action-controls" class="action-controls"></div>
+      <div>
+        <h2>Recent actions</h2>
+        <ol id="action-log" class="action-log"></ol>
+      </div>
+    </aside>
+  </div>
+</section>
+<script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
+<script src="{{ url_for('static', path='/js/room.js') }}" defer></script>
+{% endblock %}
+
