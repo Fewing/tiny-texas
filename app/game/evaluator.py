@@ -5,15 +5,15 @@ from dataclasses import dataclass
 
 RANK_VALUE = {rank: value for value, rank in enumerate("23456789TJQKA", start=2)}
 HAND_NAMES = {
-    8: "straight flush",
-    7: "four of a kind",
-    6: "full house",
-    5: "flush",
-    4: "straight",
-    3: "three of a kind",
-    2: "two pair",
-    1: "one pair",
-    0: "high card",
+    8: "同花顺",
+    7: "四条",
+    6: "葫芦",
+    5: "同花",
+    4: "顺子",
+    3: "三条",
+    2: "两对",
+    1: "一对",
+    0: "高牌",
 }
 
 
@@ -52,7 +52,7 @@ def _straight_high(ranks: list[int]) -> int | None:
 
 def evaluate(cards: list[str]) -> HandValue:
     if len(cards) < 5:
-        raise ValueError("At least five cards are required.")
+        raise ValueError("至少需要五张牌。")
 
     ranks = [_rank(card) for card in cards]
     counts = Counter(ranks)
@@ -112,4 +112,3 @@ def evaluate(cards: list[str]) -> HandValue:
 
 def describe(value: HandValue) -> str:
     return value.name
-

@@ -46,13 +46,13 @@ def create_room(
 ):
     auth = require_csrf(request, db, csrf_token)
     if not 2 <= seat_count <= 9:
-        raise HTTPException(status_code=400, detail="Seat count must be between 2 and 9.")
+        raise HTTPException(status_code=400, detail="座位数必须在 2 到 9 之间。")
     if small_blind <= 0 or big_blind <= small_blind or buy_in < big_blind * 20:
-        raise HTTPException(status_code=400, detail="Invalid blind or buy-in configuration.")
+        raise HTTPException(status_code=400, detail="盲注或买入筹码配置无效。")
 
     room = Room(
         code=_new_room_code(db),
-        name=name.strip()[:80] or "Tiny Table",
+        name=name.strip()[:80] or "小牌桌",
         creator_id=auth.user.id,
         seat_count=seat_count,
         small_blind=small_blind,
@@ -168,7 +168,7 @@ def _new_room_code(db: DbSession) -> str:
 def _get_room_or_404(db: DbSession, code: str) -> Room:
     room = db.execute(select(Room).where(Room.code == code.upper())).scalar_one_or_none()
     if room is None:
-        raise HTTPException(status_code=404, detail="Room not found.")
+        raise HTTPException(status_code=404, detail="房间不存在。")
     return room
 
 

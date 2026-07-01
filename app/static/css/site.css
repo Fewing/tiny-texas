@@ -118,6 +118,22 @@ h2 {
   line-height: 1.6;
 }
 
+.slogan {
+  margin: 16px 0 0;
+  color: #f2d683;
+  font-size: clamp(1.18rem, 3vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.page-slogan {
+  margin: 10px 0 8px;
+  color: #f2d683;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -446,4 +462,3 @@ input {
     flex-direction: column;
   }
 }
-

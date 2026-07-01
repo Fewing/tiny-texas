@@ -35,4 +35,3 @@ app.include_router(websocket_router)
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
-

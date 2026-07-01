@@ -83,7 +83,7 @@ async def _handle_message(websocket: WebSocket, db, room: Room, user, message: d
             amount = int(payload.get("amount") or 0)
             await service.submit_action(db, room, user, action_type, amount)
         else:
-            raise GameError("Unsupported message type.")
+            raise GameError("不支持的消息类型。")
         await websocket.send_json({"type": "action.accepted", "request_id": request_id, "payload": {}})
     except (GameError, TypeError, ValueError) as exc:
         await connections.send_to_user(room.code, user.id, {"type": "error", "request_id": request_id, "payload": {"message": str(exc)}})
@@ -100,4 +100,3 @@ def _origin_allowed(websocket: WebSocket) -> bool:
     origin_host = urlparse(origin).netloc
     request_host = websocket.headers.get("host")
     return bool(origin_host and request_host and origin_host == request_host)
-

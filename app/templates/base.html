@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,15 +12,15 @@
       <a class="brand" href="/">Tiny Texas</a>
       <nav class="nav">
         {% if current_user %}
-          <a href="/lobby">Lobby</a>
+          <a href="/lobby">大厅</a>
           <span class="user-pill">{{ current_user.username }}</span>
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="ghost-button" type="submit">Log out</button>
+            <button class="ghost-button" type="submit">退出登录</button>
           </form>
         {% else %}
-          <a href="/login">Log in</a>
-          <a class="primary-link" href="/register">Register</a>
+          <a href="/login">登录</a>
+          <a class="primary-link" href="/register">注册</a>
         {% endif %}
       </nav>
     </header>
@@ -29,4 +29,3 @@
     </main>
   </body>
 </html>
-

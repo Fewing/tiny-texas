@@ -144,12 +144,12 @@ class RoomRuntime:
 
     def seat_player(self, user_id: int, username: str, seat_index: int, player_type: str = "human") -> None:
         if self.phase != WAITING:
-            raise GameError("Players can only take seats between hands.")
+            raise GameError("只能在两手牌之间入座。")
         if seat_index < 0 or seat_index >= self.config.seat_count:
-            raise GameError("Invalid seat.")
+            raise GameError("座位无效。")
         occupied = self.players.get(seat_index)
         if occupied is not None and occupied.user_id != user_id:
-            raise GameError("Seat is already occupied.")
+            raise GameError("该座位已被占用。")
         for existing_seat, player in list(self.players.items()):
             if player.user_id == user_id and existing_seat != seat_index:
                 del self.players[existing_seat]
@@ -186,7 +186,7 @@ class RoomRuntime:
             return
         player = self.players[seat_index]
         if self.phase != WAITING and player.in_hand:
-            raise GameError("Players can only stand between hands.")
+            raise GameError("只能在两手牌之间离座。")
         del self.players[seat_index]
 
     def set_connected(self, user_id: int, connected: bool) -> None:
@@ -196,20 +196,20 @@ class RoomRuntime:
 
     def set_ready(self, user_id: int, ready: bool = True) -> None:
         if self.phase != WAITING:
-            raise GameError("Ready state can only change between hands.")
+            raise GameError("只能在两手牌之间更改准备状态。")
         player = self._player_for_user(user_id)
         if player is None:
-            raise GameError("Take a seat before getting ready.")
+            raise GameError("请先入座再准备。")
         if player.stack <= 0:
             player.stack = self.config.buy_in
         player.ready = ready
 
     def start_hand(self) -> HandResult | None:
         if self.phase != WAITING:
-            raise GameError("A hand is already in progress.")
+            raise GameError("当前手牌尚未结束。")
         active_seats = [seat for seat, player in sorted(self.players.items()) if player.ready and player.stack > 0]
         if len(active_seats) < 2:
-            raise GameError("At least two ready seated players are required.")
+            raise GameError("至少需要两名已准备的入座玩家。")
 
         self.hand_number += 1
         self.phase = PREFLOP
@@ -230,7 +230,7 @@ class RoomRuntime:
             lambda seat: seat in active_seats,
         )
         if self.dealer_seat is None:
-            raise GameError("Could not assign dealer.")
+            raise GameError("无法分配庄位。")
 
         small_blind_seat = (
             self.dealer_seat
@@ -239,7 +239,7 @@ class RoomRuntime:
         )
         big_blind_seat = self._next_seat_after(small_blind_seat, lambda seat: seat in active_seats)
         if small_blind_seat is None or big_blind_seat is None:
-            raise GameError("Could not assign blinds.")
+            raise GameError("无法分配盲注位置。")
 
         for _round in range(2):
             for seat in self._ordered_from(small_blind_seat, active_seats):
@@ -282,10 +282,10 @@ class RoomRuntime:
     def submit_action(self, user_id: int, action_type: str, amount: int = 0) -> HandResult | None:
         player = self._player_for_user(user_id)
         if player is None or player.seat_index != self.current_turn_seat:
-            raise GameError("It is not your turn.")
+            raise GameError("还没轮到你行动。")
         legal_types = {action["type"] for action in self.legal_actions_for_user(user_id)}
         if action_type not in legal_types:
-            raise GameError("Illegal action.")
+            raise GameError("当前动作不合法。")
 
         old_current_bet = self.current_bet
         committed = 0
@@ -296,17 +296,17 @@ class RoomRuntime:
             player.folded = True
         elif action_type == "check":
             if to_call:
-                raise GameError("Cannot check facing a bet.")
+                raise GameError("面对下注时不能过牌。")
         elif action_type == "call":
             committed = player.commit(to_call)
         elif action_type == "bet":
             if self.current_bet != 0:
-                raise GameError("Use raise when a bet already exists.")
+                raise GameError("已有下注时请使用加注。")
             target_total = int(amount)
             if target_total < self.config.big_blind:
-                raise GameError("Bet is below the minimum.")
+                raise GameError("下注低于最低额度。")
             if target_total > player.current_bet + player.stack:
-                raise GameError("Bet exceeds stack.")
+                raise GameError("下注超过可用筹码。")
             committed = player.commit(target_total - player.current_bet)
             self.current_bet = player.current_bet
             self.min_raise = max(self.config.big_blind, self.current_bet)
@@ -314,9 +314,9 @@ class RoomRuntime:
             target_total = int(amount)
             min_total = self.current_bet + self.min_raise
             if target_total < min_total:
-                raise GameError("Raise is below the minimum.")
+                raise GameError("加注低于最低额度。")
             if target_total > player.current_bet + player.stack:
-                raise GameError("Raise exceeds stack.")
+                raise GameError("加注超过可用筹码。")
             committed = player.commit(target_total - player.current_bet)
             self.current_bet = player.current_bet
             self.min_raise = max(self.min_raise, self.current_bet - old_current_bet)
@@ -450,7 +450,7 @@ class RoomRuntime:
                 "username": winner.username,
                 "seat_index": winner.seat_index,
                 "amount": pot,
-                "hand_rank": "uncontested",
+                "hand_rank": "无人争夺",
             }
         ]
         return self._complete_hand("fold", pot, awards, {})

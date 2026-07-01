@@ -28,8 +28,7 @@ def load_auth_context(request: Request, db: DbSession) -> AuthContext | None:
 def require_csrf(request: Request, db: DbSession, csrf_token: str) -> AuthContext:
     auth = load_auth_context(request, db)
     if auth is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Login required.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="请先登录。")
     if not csrf_token or csrf_token != auth.session.csrf_token:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid CSRF token.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="页面令牌无效，请刷新后重试。")
     return auth
-

@@ -31,7 +31,7 @@ class GameService:
                 )
             ).scalar_one_or_none()
             if existing is not None:
-                raise GameError("Seat is already occupied.")
+                raise GameError("该座位已被占用。")
             runtime.seat_player(user.id, user.username, seat_index)
             room_player = _get_or_create_room_player(db, room, user)
             room_player.seat_index = seat_index
@@ -62,9 +62,9 @@ class GameService:
         runtime = self.room_manager.get_or_create(room)
         async with runtime.lock:
             if runtime.phase != "waiting":
-                raise GameError("A hand is already running.")
+                raise GameError("当前手牌尚未结束。")
             if not any(player.user_id == user.id for player in runtime.players.values()):
-                raise GameError("Take a seat before starting a hand.")
+                raise GameError("请先入座再开始手牌。")
             result = runtime.start_hand()
             if result is not None:
                 self._persist_result(db, room, result)

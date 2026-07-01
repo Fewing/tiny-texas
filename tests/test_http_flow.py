@@ -17,7 +17,8 @@ def test_register_create_room_flow(tmp_path, monkeypatch):
             follow_redirects=True,
         )
         assert register.status_code == 200
-        assert "Lobby" in register.text
+        assert "大厅" in register.text
+        assert "我们不生产米，我们只是慈善家的搬运工。" in register.text
 
         csrf_match = re.search(r'name="csrf_token" value="([^"]+)"', register.text)
         assert csrf_match is not None
@@ -26,7 +27,7 @@ def test_register_create_room_flow(tmp_path, monkeypatch):
             "/rooms",
             data={
                 "csrf_token": csrf_match.group(1),
-                "name": "Smoke Table",
+                "name": "测试牌桌",
                 "seat_count": "2",
                 "small_blind": "5",
                 "big_blind": "10",
@@ -37,5 +38,5 @@ def test_register_create_room_flow(tmp_path, monkeypatch):
 
         assert room.status_code == 200
         assert 'id="room-app"' in room.text
-        assert "Smoke Table" in room.text
-
+        assert "测试牌桌" in room.text
+        assert "我们不生产米，我们只是慈善家的搬运工。" in room.text

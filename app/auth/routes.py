@@ -46,7 +46,7 @@ def login(
         return templates.TemplateResponse(
             request,
             "auth/login.html",
-            {"current_user": None, "error": "Invalid username or password."},
+            {"current_user": None, "error": "用户名或密码错误。"},
             status_code=400,
         )
     token, _session = create_session(db, user)
@@ -75,14 +75,14 @@ def register(
         return templates.TemplateResponse(
             request,
             "auth/register.html",
-            {"current_user": None, "error": "Username must be 3-32 characters."},
+            {"current_user": None, "error": "用户名长度必须为 3-32 个字符。"},
             status_code=400,
         )
     if len(password) < 8:
         return templates.TemplateResponse(
             request,
             "auth/register.html",
-            {"current_user": None, "error": "Password must be at least 8 characters."},
+            {"current_user": None, "error": "密码至少需要 8 个字符。"},
             status_code=400,
         )
     existing = db.execute(select(User).where(User.username == clean_username)).scalar_one_or_none()
@@ -90,7 +90,7 @@ def register(
         return templates.TemplateResponse(
             request,
             "auth/register.html",
-            {"current_user": None, "error": "Username is already taken."},
+            {"current_user": None, "error": "用户名已被占用。"},
             status_code=400,
         )
     user = User(username=clean_username, password_hash=hash_password(password))

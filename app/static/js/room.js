@@ -18,10 +18,10 @@ if (app) {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(`${protocol}://${window.location.host}/ws/rooms/${roomCode}`);
     socket.addEventListener("open", () => {
-      connectionState.textContent = "Connected";
+      connectionState.textContent = "已连接";
     });
     socket.addEventListener("close", () => {
-      connectionState.textContent = "Disconnected. Reconnecting...";
+      connectionState.textContent = "连接已断开，正在重连...";
       window.setTimeout(connect, 1200);
     });
     socket.addEventListener("message", (event) => {
@@ -38,7 +38,7 @@ if (app) {
 
   function send(type, payload = {}) {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      resultEl.innerHTML = '<p class="alert">Connection is not ready.</p>';
+      resultEl.innerHTML = '<p class="alert">连接尚未就绪。</p>';
       return;
     }
     socket.send(JSON.stringify({ version: 1, request_id: crypto.randomUUID(), type, payload }));
@@ -46,7 +46,7 @@ if (app) {
 
   function render() {
     potEl.textContent = state.pot;
-    communityEl.innerHTML = state.community_cards.map(cardHtml).join("") || '<span class="muted">No board yet</span>';
+    communityEl.innerHTML = state.community_cards.map(cardHtml).join("") || '<span class="muted">尚未发公共牌</span>';
     renderSeats();
     renderControls();
     renderResult();
@@ -59,18 +59,18 @@ if (app) {
       const seatNode = document.createElement("article");
       seatNode.className = `seat${seat.occupied ? "" : " empty"}${state.current_turn_seat === seat.seat_index ? " current-turn" : ""}`;
       if (!seat.occupied) {
-        seatNode.innerHTML = `<div>Seat ${seat.seat_index + 1}</div><button class="button secondary" type="button">Sit</button>`;
+        seatNode.innerHTML = `<div>${seat.seat_index + 1} 号座位</div><button class="button secondary" type="button">入座</button>`;
         seatNode.querySelector("button").addEventListener("click", () => send("seat.take", { seat_index: seat.seat_index }));
         seatsEl.appendChild(seatNode);
         continue;
       }
 
       const badges = [];
-      if (state.dealer_seat === seat.seat_index) badges.push("Dealer");
-      if (seat.ready) badges.push("Ready");
-      if (seat.folded) badges.push("Folded");
-      if (seat.all_in) badges.push("All-in");
-      if (state.current_turn_seat === seat.seat_index) badges.push("Turn");
+      if (state.dealer_seat === seat.seat_index) badges.push("庄位");
+      if (seat.ready) badges.push("已准备");
+      if (seat.folded) badges.push("已弃牌");
+      if (seat.all_in) badges.push("全下");
+      if (state.current_turn_seat === seat.seat_index) badges.push("行动中");
 
       seatNode.innerHTML = `
         <div class="seat-name">
@@ -78,8 +78,8 @@ if (app) {
           <span>#${seat.seat_index + 1}</span>
         </div>
         <div class="seat-meta">
-          <span class="badge">Stack ${seat.stack}</span>
-          <span class="badge">Bet ${seat.current_bet}</span>
+          <span class="badge">筹码 ${seat.stack}</span>
+          <span class="badge">下注 ${seat.current_bet}</span>
           ${badges.map((badge) => `<span class="badge">${badge}</span>`).join("")}
         </div>
         <div class="card-row">${seat.hole_cards.map(cardHtml).join("")}</div>
@@ -91,14 +91,14 @@ if (app) {
           const ready = document.createElement("button");
           ready.className = "button primary";
           ready.type = "button";
-          ready.textContent = "Ready";
+          ready.textContent = "准备";
           ready.addEventListener("click", () => send("room.ready", { ready: true }));
           row.appendChild(ready);
         }
         const stand = document.createElement("button");
         stand.className = "button secondary";
         stand.type = "button";
-        stand.textContent = "Stand";
+        stand.textContent = "离座";
         stand.addEventListener("click", () => send("seat.leave", {}));
         row.appendChild(stand);
         seatNode.appendChild(row);
@@ -111,14 +111,14 @@ if (app) {
     controlsEl.innerHTML = "";
     const status = document.createElement("div");
     status.className = "status-line";
-    status.textContent = `Phase: ${state.phase} / Hand: ${state.hand_number}`;
+    status.textContent = `阶段：${phaseLabel(state.phase)} / 第 ${state.hand_number} 手牌`;
     controlsEl.appendChild(status);
 
     if (state.phase === "waiting" && state.can_start) {
       const start = document.createElement("button");
       start.className = "button primary";
       start.type = "button";
-      start.textContent = "Start hand";
+      start.textContent = "开始手牌";
       start.addEventListener("click", () => send("hand.start", {}));
       controlsEl.appendChild(start);
     }
@@ -137,7 +137,7 @@ if (app) {
         input.max = action.max;
         input.value = action.min;
         input.style.maxWidth = "120px";
-        const button = actionButton(action.type, () => send("hand.action", { action_type: action.type, amount: Number(input.value) }));
+        const button = actionButton(actionLabel(action.type), () => send("hand.action", { action_type: action.type, amount: Number(input.value) }));
         actionRow.appendChild(input);
         actionRow.appendChild(button);
         continue;
@@ -153,14 +153,14 @@ if (app) {
       return;
     }
     const awards = state.last_result.awards.map((award) => (
-      `<div><strong>${escapeHtml(award.username)}</strong> wins ${award.amount} with ${escapeHtml(award.hand_rank)}</div>`
+      `<div><strong>${escapeHtml(award.username)}</strong> 赢得 ${award.amount}，牌型：${escapeHtml(handRankLabel(award.hand_rank))}</div>`
     )).join("");
-    resultEl.innerHTML = `<h2>Last hand</h2>${awards}`;
+    resultEl.innerHTML = `<h2>上一手牌</h2>${awards}`;
   }
 
   function renderLog() {
     logEl.innerHTML = state.actions.slice(-12).reverse().map((action) => (
-      `<li>${escapeHtml(action.phase)}: ${escapeHtml(action.action_type)} ${action.amount || ""}</li>`
+      `<li>${escapeHtml(phaseLabel(action.phase))}：${escapeHtml(actionLabel(action.action_type))} ${action.amount || ""}</li>`
     )).join("");
   }
 
@@ -174,9 +174,50 @@ if (app) {
   }
 
   function labelFor(action) {
-    if (action.type === "call") return `Call ${action.amount}`;
-    if (action.type === "all_in") return `All-in ${action.amount}`;
-    return action.type.replace("_", " ");
+    if (action.type === "call") return `跟注 ${action.amount}`;
+    if (action.type === "all_in") return `全下 ${action.amount}`;
+    return actionLabel(action.type);
+  }
+
+  function phaseLabel(phase) {
+    return {
+      waiting: "等待中",
+      preflop: "翻牌前",
+      flop: "翻牌",
+      turn: "转牌",
+      river: "河牌",
+    }[phase] || phase;
+  }
+
+  function actionLabel(actionType) {
+    return {
+      small_blind: "小盲",
+      big_blind: "大盲",
+      fold: "弃牌",
+      check: "过牌",
+      call: "跟注",
+      bet: "下注",
+      raise: "加注",
+      all_in: "全下",
+      deal_flop: "发翻牌",
+      deal_turn: "发转牌",
+      deal_river: "发河牌",
+    }[actionType] || actionType;
+  }
+
+  function handRankLabel(rank) {
+    return {
+      "straight flush": "同花顺",
+      "four of a kind": "四条",
+      "full house": "葫芦",
+      flush: "同花",
+      straight: "顺子",
+      "three of a kind": "三条",
+      "two pair": "两对",
+      "one pair": "一对",
+      "high card": "高牌",
+      uncontested: "无人争夺",
+    }[rank] || rank;
   }
 
   function cardHtml(card) {
@@ -187,7 +228,7 @@ if (app) {
   }
 
   function suitSymbol(suit) {
-    return { c: "C", d: "D", h: "H", s: "S" }[suit] || suit;
+    return { c: "♣", d: "♦", h: "♥", s: "♠" }[suit] || suit;
   }
 
   function escapeHtml(value) {
@@ -202,4 +243,3 @@ if (app) {
   render();
   connect();
 }
-
