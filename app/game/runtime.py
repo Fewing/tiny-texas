@@ -133,6 +133,7 @@ class RoomRuntime:
     community_cards: list[str] = field(default_factory=list)
     deck: list[str] = field(default_factory=list)
     actions: list[ActionEvent] = field(default_factory=list)
+    rebuy_counts: dict[int, int] = field(default_factory=dict)
     last_result: HandResult | None = None
     hand_started_at: datetime | None = None
 
@@ -202,8 +203,9 @@ class RoomRuntime:
         player = self._player_for_user(user_id)
         if player is None:
             raise GameError("请先入座再准备。")
-        if player.stack <= 0:
+        if ready and player.stack <= 0:
             player.stack = self.config.buy_in
+            self.rebuy_counts[player.user_id] = self.rebuy_counts.get(player.user_id, 0) + 1
         player.ready = ready
 
     def start_hand(self) -> HandResult | None:
@@ -356,6 +358,7 @@ class RoomRuntime:
                     "username": player.username,
                     "player_type": player.player_type,
                     "stack": player.stack,
+                    "rebuy_count": self.rebuy_counts.get(player.user_id, 0),
                     "ready": player.ready,
                     "connected": player.connected,
                     "in_hand": player.in_hand,

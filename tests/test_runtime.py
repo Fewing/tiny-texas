@@ -51,6 +51,23 @@ def test_fold_awards_pot_and_finishes_hand():
     assert runtime.last_result.showdown_players == []
 
 
+def test_rebuy_adds_room_scoped_player_marker():
+    runtime = make_runtime()
+    runtime.seat_player(1, "alice", 0)
+    runtime.players[0].stack = 0
+
+    runtime.set_ready(1, True)
+
+    assert runtime.players[0].stack == 1000
+    assert runtime.rebuy_counts[1] == 1
+    assert runtime.public_state(1)["players"][0]["rebuy_count"] == 1
+
+    other_room = make_runtime()
+    other_room.seat_player(1, "alice", 0)
+
+    assert other_room.public_state(1)["players"][0]["rebuy_count"] == 0
+
+
 def test_showdown_side_pot_awards_are_settled():
     runtime = make_runtime()
     runtime.seat_player(1, "alice", 0)

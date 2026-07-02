@@ -89,6 +89,9 @@ if (app) {
       if (seat.folded) badges.push("已弃牌");
       if (seat.all_in) badges.push("全下");
       if (state.current_turn_seat === seat.seat_index) badges.push("行动中");
+      const rebuyBadge = seat.rebuy_count > 0
+        ? `<span class="badge rebuy-badge">复活甲 x${seat.rebuy_count}</span>`
+        : "";
 
       seatNode.innerHTML = `
         <div class="seat-name">
@@ -98,6 +101,7 @@ if (app) {
         <div class="seat-meta">
           <span class="badge">筹码 ${seat.stack}</span>
           <span class="badge">下注 ${seat.current_bet}</span>
+          ${rebuyBadge}
           ${badges.map((badge) => `<span class="badge">${badge}</span>`).join("")}
         </div>
         <div class="card-row">${seat.hole_cards.map(cardHtml).join("")}</div>

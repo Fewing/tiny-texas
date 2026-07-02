@@ -409,6 +409,14 @@ input {
   padding: 4px 7px;
 }
 
+.badge.rebuy-badge {
+  border: 1px solid rgba(255, 220, 110, 0.72);
+  background: linear-gradient(135deg, rgba(147, 32, 45, 0.92), rgba(234, 163, 65, 0.92));
+  box-shadow: 0 0 0 2px rgba(234, 163, 65, 0.16);
+  color: #fff7d1;
+  font-weight: 900;
+}
+
 .table-panel {
   display: grid;
   gap: 18px;
@@ -445,6 +453,18 @@ input {
 .award-row span,
 .showdown-row span {
   color: var(--muted);
+}
+
+.showdown-row .card {
+  color: var(--black-card);
+}
+
+.showdown-row .card.red {
+  color: var(--red-card);
+}
+
+.showdown-row .card.hidden {
+  color: #b9c6c2;
 }
 
 .result-modal[hidden] {
