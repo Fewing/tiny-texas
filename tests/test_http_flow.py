@@ -19,13 +19,23 @@ def _room_code(html: str) -> str:
 
 def test_register_create_delete_room_flow(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'tiny_texas_test.db'}")
+    monkeypatch.setenv("REGISTRATION_INVITE_CODE", "test-invite")
 
     from app.main import app
 
     with TestClient(app) as client:
+        blocked = client.post(
+            "/register",
+            data={"username": "blocked", "password": "password123", "invite_code": "wrong"},
+            follow_redirects=True,
+        )
+        assert blocked.status_code == 400
+        assert "邀请码无效。" in blocked.text
+        assert "大厅" not in blocked.text
+
         register = client.post(
             "/register",
-            data={"username": "smokeuser", "password": "password123"},
+            data={"username": "smokeuser", "password": "password123", "invite_code": "test-invite"},
             follow_redirects=True,
         )
         assert register.status_code == 200
@@ -59,7 +69,7 @@ def test_register_create_delete_room_flow(tmp_path, monkeypatch):
         client.post("/logout", data={"csrf_token": _csrf_token(lobby.text)}, follow_redirects=True)
         intruder = client.post(
             "/register",
-            data={"username": "intruder", "password": "password123"},
+            data={"username": "intruder", "password": "password123", "invite_code": "test-invite"},
             follow_redirects=True,
         )
         assert intruder.status_code == 200

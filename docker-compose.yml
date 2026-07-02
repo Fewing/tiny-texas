@@ -6,6 +6,7 @@ services:
     environment:
       DATABASE_URL: sqlite:////app/data/tiny_texas.db
       COOKIE_SECURE: "false"
+      REGISTRATION_INVITE_CODE: "change-this-invite-code"
     volumes:
       - tiny_texas_data:/app/data
 

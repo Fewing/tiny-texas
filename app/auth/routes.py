@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import secrets
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -24,6 +26,11 @@ def _set_session_cookie(response: RedirectResponse, token: str) -> None:
         samesite="lax",
         max_age=settings.session_days * 24 * 60 * 60,
     )
+
+
+def _valid_invite_code(invite_code: str) -> bool:
+    expected = settings.registration_invite_code
+    return bool(expected) and secrets.compare_digest(invite_code.strip(), expected)
 
 
 @router.get("/login")
@@ -68,9 +75,17 @@ def register(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    invite_code: str = Form(""),
     db: DbSession = Depends(get_db),
 ):
     clean_username = username.strip()
+    if not _valid_invite_code(invite_code):
+        return templates.TemplateResponse(
+            request,
+            "auth/register.html",
+            {"current_user": None, "error": "邀请码无效。"},
+            status_code=400,
+        )
     if len(clean_username) < 3 or len(clean_username) > 32:
         return templates.TemplateResponse(
             request,

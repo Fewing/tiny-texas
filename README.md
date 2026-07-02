@@ -15,6 +15,8 @@ Open `http://localhost:8000`.
 
 ## Run with Docker
 
+Set `REGISTRATION_INVITE_CODE` in `docker-compose.yml` before starting; new users must enter that code to register.
+
 ```bash
 docker compose up --build
 ```

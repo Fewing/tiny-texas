@@ -17,6 +17,7 @@ class Settings:
     session_cookie_name: str = os.getenv("SESSION_COOKIE_NAME", "tiny_texas_session")
     session_days: int = int(os.getenv("SESSION_DAYS", "14"))
     cookie_secure: bool = _bool_env("COOKIE_SECURE", False)
+    registration_invite_code: str = os.getenv("REGISTRATION_INVITE_CODE", "").strip()
     allowed_origins: tuple[str, ...] = tuple(
         origin.strip()
         for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
