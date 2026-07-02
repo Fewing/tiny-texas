@@ -59,7 +59,19 @@ if (app) {
       resultEl.innerHTML = '<p class="alert">连接尚未就绪。</p>';
       return;
     }
-    socket.send(JSON.stringify({ version: 1, request_id: crypto.randomUUID(), type, payload }));
+    socket.send(JSON.stringify({ version: 1, request_id: makeRequestId(), type, payload }));
+  }
+
+  function makeRequestId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      const values = new Uint32Array(4);
+      window.crypto.getRandomValues(values);
+      return `${Date.now().toString(36)}-${Array.from(values, (value) => value.toString(36)).join("-")}`;
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   }
 
   function render() {
