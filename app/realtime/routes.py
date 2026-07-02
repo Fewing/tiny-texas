@@ -79,11 +79,11 @@ async def _handle_message(websocket: WebSocket, db, room: Room, user, message: d
         elif message_type == "room.ready":
             await service.set_ready(room, user, bool(payload.get("ready", True)))
         elif message_type == "hand.start":
-            await service.start_hand(db, room, user)
+            await service.start_hand(room, user)
         elif message_type == "hand.action":
             action_type = payload.get("action_type") or payload.get("type")
             amount = int(payload.get("amount") or 0)
-            await service.submit_action(db, room, user, action_type, amount)
+            await service.submit_action(room, user, action_type, amount)
         else:
             raise GameError("不支持的消息类型。")
         await websocket.send_json({"type": "action.accepted", "request_id": request_id, "payload": {}})

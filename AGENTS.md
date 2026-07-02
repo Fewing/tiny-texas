@@ -13,7 +13,6 @@ This repository is a lightweight FastAPI Texas Hold'em app. Source code lives in
 - `app/bots/`: bot strategy protocol and placeholder strategies.
 - `app/templates/` and `app/static/`: Jinja templates, CSS, browser JS.
 - `tests/`: pytest tests for game logic and HTTP flows.
-- `migrations/`: Alembic migration entrypoint.
 
 ## Build, Test, and Development Commands
 
@@ -21,7 +20,7 @@ Use the local virtual environment when available:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m compileall app migrations tests
+.\.venv\Scripts\python.exe -m compileall app tests
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -49,7 +48,7 @@ Prefer focused tests in `tests/test_runtime.py` for poker mechanics and HTTP flo
 
 There is no git history in this workspace, so use clear, conventional commit messages such as `feat: add room ready flow` or `fix: hide opponent hole cards`.
 
-Pull requests should include a short summary, test results, and screenshots or screen recordings for visible UI changes. Link related issues when available, and call out database model or migration changes explicitly.
+Pull requests should include a short summary, test results, and screenshots or screen recordings for visible UI changes. Link related issues when available, and call out database model changes explicitly.
 
 ## Security & Configuration Tips
 

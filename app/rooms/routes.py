@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.auth.dependencies import load_auth_context, require_csrf
 from app.db import get_db
-from app.db.models import ActionRecord, HandRecord, Room, RoomPlayer
+from app.db.models import Room, RoomPlayer
 from app.game.runtime import GameError
 from app.web.templates import templates
 
@@ -121,8 +121,6 @@ async def delete_room(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有房间创建者可以删除房间。")
 
     room_code = room.code
-    db.execute(delete(ActionRecord).where(ActionRecord.room_id == room.id))
-    db.execute(delete(HandRecord).where(HandRecord.room_id == room.id))
     db.execute(delete(RoomPlayer).where(RoomPlayer.room_id == room.id))
     db.delete(room)
     db.commit()

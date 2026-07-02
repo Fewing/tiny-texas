@@ -53,5 +53,5 @@ class RoomManager:
 
         for seat in list(runtime.players):
             if seat not in active_seats:
-                del runtime.players[seat]
+                runtime.unseat_player(seat)
         return runtime

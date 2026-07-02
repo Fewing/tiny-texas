@@ -134,6 +134,7 @@ class RoomRuntime:
     deck: list[str] = field(default_factory=list)
     actions: list[ActionEvent] = field(default_factory=list)
     rebuy_counts: dict[int, int] = field(default_factory=dict)
+    player_stacks: dict[int, int] = field(default_factory=dict)
     last_result: HandResult | None = None
     hand_started_at: datetime | None = None
 
@@ -153,11 +154,21 @@ class RoomRuntime:
         occupied = self.players.get(seat_index)
         if occupied is not None and occupied.user_id != user_id:
             raise GameError("该座位已被占用。")
+        current_player = self._player_for_user(user_id)
+        if current_player is not None:
+            stack = current_player.stack
+            ready = current_player.ready
+        elif occupied is not None:
+            stack = occupied.stack
+            ready = occupied.ready
+        else:
+            stack = self.player_stacks.get(user_id, self.config.buy_in)
+            ready = False
         for existing_seat, player in list(self.players.items()):
             if player.user_id == user_id and existing_seat != seat_index:
+                self._remember_player_stack(player)
                 del self.players[existing_seat]
-        stack = occupied.stack if occupied is not None else self.config.buy_in
-        ready = occupied.ready if occupied is not None else False
+        self.player_stacks[user_id] = stack
         self.players[seat_index] = PlayerRuntime(
             user_id=user_id,
             username=username,
@@ -177,11 +188,12 @@ class RoomRuntime:
                 username=username,
                 seat_index=seat_index,
                 player_type=player_type,
-                stack=self.config.buy_in,
+                stack=self.player_stacks.get(user_id, self.config.buy_in),
             )
         elif existing.user_id == user_id:
             existing.username = username
             existing.player_type = player_type
+            self._remember_player_stack(existing)
 
     def stand_player(self, user_id: int) -> None:
         seat_index = self._seat_for_user(user_id)
@@ -190,6 +202,13 @@ class RoomRuntime:
         player = self.players[seat_index]
         if self.phase != WAITING and player.in_hand:
             raise GameError("只能在两手牌之间离座。")
+        self.unseat_player(seat_index)
+
+    def unseat_player(self, seat_index: int) -> None:
+        player = self.players.get(seat_index)
+        if player is None:
+            return
+        self._remember_player_stack(player)
         del self.players[seat_index]
 
     def set_connected(self, user_id: int, connected: bool) -> None:
@@ -206,6 +225,7 @@ class RoomRuntime:
         if ready and player.stack <= 0:
             player.stack = self.config.buy_in
             self.rebuy_counts[player.user_id] = self.rebuy_counts.get(player.user_id, 0) + 1
+        self._remember_player_stack(player)
         player.ready = ready
 
     def start_hand(self) -> HandResult | None:
@@ -590,6 +610,9 @@ class RoomRuntime:
 
     def _can_act(self, player: PlayerRuntime) -> bool:
         return player.in_hand and not player.folded and not player.all_in
+
+    def _remember_player_stack(self, player: PlayerRuntime) -> None:
+        self.player_stacks[player.user_id] = player.stack
 
     def _player_for_user(self, user_id: int | None) -> PlayerRuntime | None:
         for player in self.players.values():

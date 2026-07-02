@@ -3,8 +3,8 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from app.db.models import ActionRecord, HandRecord, Room, RoomPlayer, User
-from app.game.runtime import GameError, HandResult, RoomRuntime
+from app.db.models import Room, RoomPlayer, User
+from app.game.runtime import GameError, RoomRuntime
 from app.realtime.manager import ConnectionManager
 from app.rooms.manager import RoomManager
 
@@ -58,59 +58,23 @@ class GameService:
         await self.connections.broadcast_state(runtime)
         return runtime
 
-    async def start_hand(self, db: DbSession, room: Room, user: User) -> RoomRuntime:
+    async def start_hand(self, room: Room, user: User) -> RoomRuntime:
         runtime = self.room_manager.get_or_create(room)
         async with runtime.lock:
             if runtime.phase != "waiting":
                 raise GameError("当前手牌尚未结束。")
             if not any(player.user_id == user.id for player in runtime.players.values()):
                 raise GameError("请先入座再开始手牌。")
-            result = runtime.start_hand()
-            if result is not None:
-                self._persist_result(db, room, result)
+            runtime.start_hand()
         await self.connections.broadcast_state(runtime)
         return runtime
 
-    async def submit_action(self, db: DbSession, room: Room, user: User, action_type: str, amount: int = 0) -> RoomRuntime:
+    async def submit_action(self, room: Room, user: User, action_type: str, amount: int = 0) -> RoomRuntime:
         runtime = self.room_manager.get_or_create(room)
         async with runtime.lock:
-            result = runtime.submit_action(user.id, action_type, amount)
-            if result is not None:
-                self._persist_result(db, room, result)
+            runtime.submit_action(user.id, action_type, amount)
         await self.connections.broadcast_state(runtime)
         return runtime
-
-    def _persist_result(self, db: DbSession, room: Room, result: HandResult) -> None:
-        hand_record = HandRecord(
-            room_id=room.id,
-            hand_number=result.hand_number,
-            community_cards=result.community_cards,
-            winners_json=result.awards,
-            pot=result.pot,
-            summary_json=result.summary,
-            started_at=result.started_at,
-            ended_at=result.ended_at,
-        )
-        db.add(hand_record)
-        db.flush()
-        for event in result.actions:
-            db.add(
-                ActionRecord(
-                    room_id=room.id,
-                    hand_record_id=hand_record.id,
-                    hand_number=event.hand_number,
-                    sequence=event.sequence,
-                    user_id=event.user_id,
-                    action_type=event.action_type,
-                    amount=event.amount,
-                    payload_json={
-                        "seat_index": event.seat_index,
-                        "phase": event.phase,
-                        **event.payload,
-                    },
-                )
-            )
-        db.commit()
 
 
 def _get_room_player(db: DbSession, room: Room, user: User) -> RoomPlayer | None:

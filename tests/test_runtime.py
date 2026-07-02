@@ -68,6 +68,30 @@ def test_rebuy_adds_room_scoped_player_marker():
     assert other_room.public_state(1)["players"][0]["rebuy_count"] == 0
 
 
+def test_stack_survives_stand_and_reseat():
+    runtime = make_runtime()
+    runtime.seat_player(1, "alice", 0)
+    runtime.players[0].stack = 725
+
+    runtime.stand_player(1)
+    runtime.seat_player(1, "alice", 2)
+
+    assert 0 not in runtime.players
+    assert runtime.players[2].stack == 725
+    assert runtime.public_state(1)["players"][2]["stack"] == 725
+
+
+def test_stack_survives_direct_seat_change():
+    runtime = make_runtime()
+    runtime.seat_player(1, "alice", 0)
+    runtime.players[0].stack = 640
+
+    runtime.seat_player(1, "alice", 3)
+
+    assert 0 not in runtime.players
+    assert runtime.players[3].stack == 640
+
+
 def test_showdown_side_pot_awards_are_settled():
     runtime = make_runtime()
     runtime.seat_player(1, "alice", 0)

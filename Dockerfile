@@ -5,9 +5,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY pyproject.toml README.md alembic.ini ./
+COPY pyproject.toml README.md ./
 COPY app ./app
-COPY migrations ./migrations
 RUN pip install --no-cache-dir .
 
 EXPOSE 8000

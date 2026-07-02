@@ -10,7 +10,6 @@ dependencies = [
     "python-multipart>=0.0.9",
     "sqlalchemy>=2.0.30",
     "aiosqlite>=0.20.0",
-    "alembic>=1.13.2",
     "pwdlib[argon2]>=0.2.1",
     "pokerkit>=0.6.3",
 ]
