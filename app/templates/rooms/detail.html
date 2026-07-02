@@ -14,10 +14,18 @@
       <p class="page-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
       <p class="muted">{{ room.seat_count }} 个座位 / 盲注 {{ room.small_blind }}-{{ room.big_blind }} / 买入 {{ room.buy_in }}</p>
     </div>
-    <form method="post" action="/rooms/{{ room.code }}/join">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="button secondary" type="submit">加入房间</button>
-    </form>
+    <div class="room-heading-actions">
+      {% if room.creator_id == current_user.id %}
+        <form method="post" action="/rooms/{{ room.code }}/delete" onsubmit="return confirm('确定删除这个房间吗？');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="button danger" type="submit">删除房间</button>
+        </form>
+      {% endif %}
+      <form method="post" action="/rooms/{{ room.code }}/join">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="button secondary" type="submit">加入房间</button>
+      </form>
+    </div>
   </div>
 
   {% if error %}<p class="alert">{{ error }}</p>{% endif %}
@@ -60,5 +68,5 @@
   </div>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}?v=20260701-2" defer></script>
+<script src="{{ url_for('static', path='/js/room.js') }}?v=20260702-1" defer></script>
 {% endblock %}

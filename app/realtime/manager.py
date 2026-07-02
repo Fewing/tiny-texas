@@ -43,6 +43,15 @@ class ConnectionManager:
                 {"type": "state.snapshot", "payload": runtime.public_state(user_id)},
             )
 
+    async def close_room(self, room_code: str) -> None:
+        room_connections = self._connections.pop(room_code, {})
+        for user_connections in list(room_connections.values()):
+            for websocket in list(user_connections):
+                try:
+                    await websocket.send_json({"type": "room.deleted", "payload": {}})
+                    await websocket.close(code=1000)
+                except RuntimeError:
+                    pass
+
     async def broadcast_error(self, room_code: str, user_id: int, message: str) -> None:
         await self.send_to_user(room_code, user_id, {"type": "error", "payload": {"message": message}})
-

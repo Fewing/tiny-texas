@@ -17,6 +17,7 @@ if (app) {
   let socket = null;
   let state = initialState;
   let shownResultHandNumber = null;
+  let roomDeleted = false;
 
   resultModalClose?.addEventListener("click", () => {
     resultModal.hidden = true;
@@ -29,6 +30,9 @@ if (app) {
       connectionState.textContent = "已连接";
     });
     socket.addEventListener("close", () => {
+      if (roomDeleted) {
+        return;
+      }
       connectionState.textContent = "连接已断开，正在重连...";
       window.setTimeout(connect, 1200);
     });
@@ -40,6 +44,12 @@ if (app) {
       }
       if (message.type === "error") {
         resultEl.innerHTML = `<p class="alert">${escapeHtml(message.payload.message)}</p>`;
+      }
+      if (message.type === "room.deleted") {
+        roomDeleted = true;
+        connectionState.textContent = "房间已删除";
+        resultEl.innerHTML = '<p class="alert">房间已删除，正在返回大厅...</p>';
+        window.setTimeout(() => window.location.assign("/lobby"), 800);
       }
     });
   }

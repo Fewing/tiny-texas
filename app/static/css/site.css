@@ -172,6 +172,14 @@ button {
   color: var(--text);
 }
 
+.danger,
+.button.danger {
+  border-color: rgba(230, 107, 107, 0.55);
+  background: rgba(230, 107, 107, 0.16);
+  color: #ffd7d7;
+  font-weight: 800;
+}
+
 .ghost-button {
   background: transparent;
   border-color: var(--line);
@@ -257,6 +265,20 @@ input {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.room-actions,
+.room-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.room-actions form,
+.room-heading-actions form {
+  margin: 0;
 }
 
 .room-shell {
@@ -509,6 +531,10 @@ input {
     align-items: start;
     flex-direction: column;
   }
+
+  .room-heading-actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 560px) {
@@ -521,6 +547,16 @@ input {
   .nav {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .room-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .room-actions {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .seat-grid {

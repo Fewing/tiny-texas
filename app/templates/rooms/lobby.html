@@ -44,7 +44,15 @@
               <strong>{{ room.name }}</strong>
               <span>{{ room.code }} / {{ room.seat_count }} 个座位 / 盲注 {{ room.small_blind }}-{{ room.big_blind }}</span>
             </div>
-            <a class="button secondary" href="/rooms/{{ room.code }}">进入</a>
+            <div class="room-actions">
+              <a class="button secondary" href="/rooms/{{ room.code }}">进入</a>
+              {% if room.creator_id == current_user.id %}
+                <form method="post" action="/rooms/{{ room.code }}/delete" onsubmit="return confirm('确定删除这个房间吗？');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button class="button danger" type="submit">删除</button>
+                </form>
+              {% endif %}
+            </div>
           </article>
         {% endfor %}
       </div>

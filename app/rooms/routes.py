@@ -4,14 +4,14 @@ import secrets
 import string
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.dependencies import load_auth_context, require_csrf
 from app.db import get_db
-from app.db.models import Room, RoomPlayer
+from app.db.models import ActionRecord, HandRecord, Room, RoomPlayer
 from app.game.runtime import GameError
 from app.web.templates import templates
 
@@ -106,6 +106,30 @@ async def join_room(
     db.commit()
     await request.app.state.game_service.sync_room(db, room)
     return RedirectResponse(f"/rooms/{room.code}", status_code=303)
+
+
+@router.post("/rooms/{code}/delete")
+async def delete_room(
+    request: Request,
+    code: str,
+    csrf_token: str = Form(...),
+    db: DbSession = Depends(get_db),
+):
+    auth = require_csrf(request, db, csrf_token)
+    room = _get_room_or_404(db, code)
+    if room.creator_id != auth.user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有房间创建者可以删除房间。")
+
+    room_code = room.code
+    db.execute(delete(ActionRecord).where(ActionRecord.room_id == room.id))
+    db.execute(delete(HandRecord).where(HandRecord.room_id == room.id))
+    db.execute(delete(RoomPlayer).where(RoomPlayer.room_id == room.id))
+    db.delete(room)
+    db.commit()
+
+    request.app.state.room_manager.remove(room_code)
+    await request.app.state.connection_manager.close_room(room_code)
+    return RedirectResponse("/lobby", status_code=303)
 
 
 @router.post("/rooms/{code}/seat")

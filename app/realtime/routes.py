@@ -51,11 +51,13 @@ async def room_socket(websocket: WebSocket, code: str) -> None:
         if user is not None and room is not None:
             service = websocket.app.state.game_service
             connections = websocket.app.state.connection_manager
-            runtime = service.room_manager.get_or_create(room)
             connections.disconnect(room.code, user.id, websocket)
-            async with runtime.lock:
-                runtime.set_connected(user.id, False)
-            await connections.broadcast_state(runtime)
+            room_exists = db.execute(select(Room.id).where(Room.id == room.id)).scalar_one_or_none()
+            if room_exists is not None:
+                runtime = service.room_manager.get_or_create(room)
+                async with runtime.lock:
+                    runtime.set_connected(user.id, False)
+                await connections.broadcast_state(runtime)
         db.close()
 
 

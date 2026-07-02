@@ -28,6 +28,9 @@ class RoomManager:
             self._runtimes[room.code] = runtime
         return runtime
 
+    def remove(self, room_code: str) -> RoomRuntime | None:
+        return self._runtimes.pop(room_code.upper(), None)
+
     def sync_from_db(self, db: DbSession, room: Room) -> RoomRuntime:
         runtime = self.get_or_create(room)
         if runtime.phase != "waiting":
@@ -52,4 +55,3 @@ class RoomManager:
             if seat not in active_seats:
                 del runtime.players[seat]
         return runtime
-
