@@ -64,6 +64,25 @@ def test_all_ready_seated_players_receive_hole_cards():
     assert all(len(seat["hole_cards"]) == 2 for seat in state["players"][:4])
 
 
+def test_big_blind_can_raise_when_action_checks_to_them_preflop():
+    runtime = make_runtime()
+    seat_two_players(runtime)
+
+    runtime.start_hand()
+    runtime.submit_action(1, "call")
+    actions = runtime.public_state(2)["legal_actions"]
+
+    assert runtime.current_turn_seat == 1
+    assert [action["type"] for action in actions] == ["check", "raise", "all_in"]
+    assert actions[1]["min"] == 20
+    assert "bet" not in {action["type"] for action in actions}
+
+    runtime.submit_action(2, "raise", 20)
+
+    assert runtime.current_bet == 20
+    assert runtime.players[1].current_bet == 20
+
+
 def test_fold_awards_pot_and_finishes_hand():
     runtime = make_runtime()
     seat_two_players(runtime)

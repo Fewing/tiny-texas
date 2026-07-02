@@ -342,8 +342,12 @@ if (app) {
   function cardHtml(card) {
     const red = card.endsWith("h") || card.endsWith("d");
     const hidden = card === "XX";
-    const label = hidden ? "??" : `${card[0]}${suitSymbol(card[1])}`;
+    const label = hidden ? "??" : `${rankLabel(card[0])}${suitSymbol(card[1])}`;
     return `<span class="card${red ? " red" : ""}${hidden ? " hidden" : ""}">${label}</span>`;
+  }
+
+  function rankLabel(rank) {
+    return { T: "10" }[rank] || rank;
   }
 
   function suitSymbol(suit) {

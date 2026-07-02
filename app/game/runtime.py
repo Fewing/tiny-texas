@@ -310,7 +310,11 @@ class RoomRuntime:
             return actions
 
         actions.append({"type": "check", "amount": 0})
-        if player.stack >= self.config.big_blind:
+        if self.current_bet > 0:
+            min_total = self.current_bet + self.min_raise
+            if max_total >= min_total:
+                actions.append({"type": "raise", "min": min_total, "max": max_total})
+        elif player.stack >= self.config.big_blind:
             actions.append({"type": "bet", "min": self.config.big_blind, "max": max_total})
         if player.stack > 0:
             actions.append({"type": "all_in", "amount": max_total})
