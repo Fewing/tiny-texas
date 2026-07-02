@@ -63,8 +63,11 @@ class GameService:
         async with runtime.lock:
             if runtime.phase != "waiting":
                 raise GameError("当前手牌尚未结束。")
-            if not any(player.user_id == user.id for player in runtime.players.values()):
+            starter = next((player for player in runtime.players.values() if player.user_id == user.id), None)
+            if starter is None:
                 raise GameError("请先入座再开始手牌。")
+            if not starter.ready or starter.stack <= 0:
+                raise GameError("请先准备再开始手牌。")
             runtime.start_hand()
         await self.connections.broadcast_state(runtime)
         return runtime

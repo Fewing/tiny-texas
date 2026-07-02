@@ -92,6 +92,19 @@ def test_stack_survives_direct_seat_change():
     assert runtime.players[3].stack == 640
 
 
+def test_unready_viewer_cannot_start_ready_players_hand():
+    runtime = make_runtime()
+    runtime.seat_player(1, "alice", 0)
+    runtime.seat_player(2, "bob", 1)
+    runtime.seat_player(3, "cara", 2)
+    runtime.set_ready(2, True)
+    runtime.set_ready(3, True)
+
+    assert runtime.can_start_hand()
+    assert runtime.public_state(1)["can_start"] is False
+    assert runtime.public_state(2)["can_start"] is True
+
+
 def test_showdown_side_pot_awards_are_settled():
     runtime = make_runtime()
     runtime.seat_player(1, "alice", 0)

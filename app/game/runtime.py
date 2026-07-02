@@ -408,11 +408,19 @@ class RoomRuntime:
             "community_cards": self.community_cards,
             "players": seats,
             "legal_actions": self.legal_actions_for_user(viewer_user_id) if viewer_user_id else [],
-            "can_start": self.phase == WAITING and len(self._ready_seats()) >= 2,
+            "can_start": self.can_start_hand(viewer_user_id),
             "last_result": self.last_result.to_public() if self.last_result else None,
             "actions": [event.to_public() for event in self.actions[-20:]],
             "viewer_user_id": viewer_user_id,
         }
+
+    def can_start_hand(self, viewer_user_id: int | None = None) -> bool:
+        if self.phase != WAITING or len(self._ready_seats()) < 2:
+            return False
+        if viewer_user_id is None:
+            return True
+        viewer = self._player_for_user(viewer_user_id)
+        return viewer is not None and viewer.ready and viewer.stack > 0
 
     def _post_blind(self, seat_index: int, action_type: str, blind: int) -> None:
         player = self.players[seat_index]

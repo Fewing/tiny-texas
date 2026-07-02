@@ -76,11 +76,21 @@ if (app) {
 
   function render() {
     potEl.textContent = state.pot;
-    communityEl.innerHTML = state.community_cards.map(cardHtml).join("") || '<span class="muted">尚未发公共牌</span>';
+    communityEl.innerHTML = communityCardsHtml();
     renderSeats();
     renderControls();
     renderResult();
     renderLog();
+  }
+
+  function communityCardsHtml() {
+    if (state.community_cards.length) {
+      return state.community_cards.map(cardHtml).join("");
+    }
+    if (state.phase === "preflop") {
+      return '<span class="muted">翻牌前，本轮下注结束后发公共牌</span>';
+    }
+    return '<span class="muted">尚未发公共牌</span>';
   }
 
   function renderSeats() {
@@ -101,6 +111,7 @@ if (app) {
       if (seat.folded) badges.push("已弃牌");
       if (seat.all_in) badges.push("全下");
       if (state.current_turn_seat === seat.seat_index) badges.push("行动中");
+      if (state.phase !== "waiting" && !seat.in_hand) badges.push("本手未参与");
       const rebuyBadge = seat.rebuy_count > 0
         ? `<span class="badge rebuy-badge">复活甲 x${seat.rebuy_count}</span>`
         : "";
@@ -143,6 +154,7 @@ if (app) {
 
   function renderControls() {
     controlsEl.innerHTML = "";
+    const viewerSeat = state.players.find((seat) => seat.occupied && seat.user_id === currentUserId);
     const status = document.createElement("div");
     status.className = "status-line";
     status.textContent = `阶段：${phaseLabel(state.phase)} / 第 ${state.hand_number} 手牌`;
@@ -158,6 +170,12 @@ if (app) {
     }
 
     if (!state.legal_actions.length) {
+      if (state.phase !== "waiting" && viewerSeat && !viewerSeat.in_hand) {
+        const note = document.createElement("p");
+        note.className = "muted";
+        note.textContent = "你未参与本手，等本手结束后准备下一手。";
+        controlsEl.appendChild(note);
+      }
       return;
     }
 
