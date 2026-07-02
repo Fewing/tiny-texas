@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ACR_REGISTRY: ${{ secrets.ACR_URL }}
-      IMAGE_TAG: ${{ secrets.ACR_URL }}/fewings/tiny-texas:${{ github.sha }}
+      IMAGE_TAG: ${{ secrets.ACR_URL }}/fewings/tiny-texas:latest
 
     steps:
       - name: Checkout repository
