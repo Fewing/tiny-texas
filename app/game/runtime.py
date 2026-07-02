@@ -127,6 +127,8 @@ class RoomRuntime:
     phase: str = WAITING
     hand_number: int = 0
     dealer_seat: int | None = None
+    small_blind_seat: int | None = None
+    big_blind_seat: int | None = None
     current_turn_seat: int | None = None
     current_bet: int = 0
     min_raise: int = 0
@@ -231,9 +233,12 @@ class RoomRuntime:
     def start_hand(self) -> HandResult | None:
         if self.phase != WAITING:
             raise GameError("当前手牌尚未结束。")
-        active_seats = [seat for seat, player in sorted(self.players.items()) if player.ready and player.stack > 0]
+        active_seats = [seat for seat, player in sorted(self.players.items()) if player.stack > 0]
         if len(active_seats) < 2:
-            raise GameError("至少需要两名已准备的入座玩家。")
+            raise GameError("至少需要两名有筹码的入座玩家。")
+        unready_seats = [seat for seat in active_seats if not self.players[seat].ready]
+        if unready_seats:
+            raise GameError("所有有筹码的入座玩家都准备后才能开始。")
 
         self.hand_number += 1
         self.phase = PREFLOP
@@ -244,6 +249,8 @@ class RoomRuntime:
         self.deck = shuffled_deck()
         self.actions = []
         self.last_result = None
+        self.small_blind_seat = None
+        self.big_blind_seat = None
         self.hand_started_at = datetime.now(timezone.utc)
 
         for seat in active_seats:
@@ -264,10 +271,16 @@ class RoomRuntime:
         big_blind_seat = self._next_seat_after(small_blind_seat, lambda seat: seat in active_seats)
         if small_blind_seat is None or big_blind_seat is None:
             raise GameError("无法分配盲注位置。")
+        self.small_blind_seat = small_blind_seat
+        self.big_blind_seat = big_blind_seat
 
         for _round in range(2):
             for seat in self._ordered_from(small_blind_seat, active_seats):
                 self.players[seat].hole_cards.append(self.deck.pop())
+        for seat in active_seats:
+            player = self.players[seat]
+            if not player.in_hand or len(player.hole_cards) != 2:
+                raise GameError("发牌状态异常，请重新开始本手。")
 
         self._post_blind(small_blind_seat, "small_blind", self.config.small_blind)
         self._post_blind(big_blind_seat, "big_blind", self.config.big_blind)
@@ -402,6 +415,8 @@ class RoomRuntime:
             "phase": self.phase,
             "hand_number": self.hand_number,
             "dealer_seat": self.dealer_seat,
+            "small_blind_seat": self.small_blind_seat,
+            "big_blind_seat": self.big_blind_seat,
             "current_turn_seat": self.current_turn_seat,
             "current_bet": self.current_bet,
             "pot": self.pot,
@@ -415,7 +430,10 @@ class RoomRuntime:
         }
 
     def can_start_hand(self, viewer_user_id: int | None = None) -> bool:
-        if self.phase != WAITING or len(self._ready_seats()) < 2:
+        active_seats = [seat for seat, player in self.players.items() if player.stack > 0]
+        if self.phase != WAITING or len(active_seats) < 2:
+            return False
+        if any(not self.players[seat].ready for seat in active_seats):
             return False
         if viewer_user_id is None:
             return True
@@ -564,6 +582,8 @@ class RoomRuntime:
             showdown_players=showdown_players,
             summary={
                 "dealer_seat": self.dealer_seat,
+                "small_blind_seat": self.small_blind_seat,
+                "big_blind_seat": self.big_blind_seat,
                 "small_blind": self.config.small_blind,
                 "big_blind": self.config.big_blind,
                 "showdown_players": showdown_players,
@@ -575,6 +595,8 @@ class RoomRuntime:
         self.last_result = result
         self.phase = WAITING
         self.current_turn_seat = None
+        self.small_blind_seat = None
+        self.big_blind_seat = None
         self.current_bet = 0
         self.min_raise = self.config.big_blind
         for player in self.players.values():

@@ -15,7 +15,9 @@ class GameService:
         self.connections = connections
 
     async def sync_room(self, db: DbSession, room: Room) -> RoomRuntime:
-        runtime = self.room_manager.sync_from_db(db, room)
+        runtime = self.room_manager.get_or_create(room)
+        async with runtime.lock:
+            runtime = self.room_manager.sync_from_db(db, room)
         await self.connections.broadcast_state(runtime)
         return runtime
 

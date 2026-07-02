@@ -36,6 +36,34 @@ def test_public_state_hides_other_players_hole_cards():
     assert bob_seat["hole_cards"] == ["XX", "XX"]
 
 
+def test_public_state_exposes_dealer_and_blind_seats():
+    runtime = make_runtime()
+    seat_two_players(runtime)
+
+    runtime.start_hand()
+    state = runtime.public_state(1)
+
+    assert state["dealer_seat"] == 0
+    assert state["small_blind_seat"] == 0
+    assert state["big_blind_seat"] == 1
+
+
+def test_all_ready_seated_players_receive_hole_cards():
+    runtime = make_runtime()
+    for index, username in enumerate(("alice", "bob", "cara", "drew")):
+        runtime.seat_player(index + 1, username, index)
+        runtime.set_ready(index + 1, True)
+
+    runtime.start_hand()
+    state = runtime.public_state(1)
+
+    assert state["dealer_seat"] == 0
+    assert state["small_blind_seat"] == 1
+    assert state["big_blind_seat"] == 2
+    assert all(seat["in_hand"] for seat in state["players"][:4])
+    assert all(len(seat["hole_cards"]) == 2 for seat in state["players"][:4])
+
+
 def test_fold_awards_pot_and_finishes_hand():
     runtime = make_runtime()
     seat_two_players(runtime)
@@ -100,9 +128,9 @@ def test_unready_viewer_cannot_start_ready_players_hand():
     runtime.set_ready(2, True)
     runtime.set_ready(3, True)
 
-    assert runtime.can_start_hand()
+    assert runtime.can_start_hand() is False
     assert runtime.public_state(1)["can_start"] is False
-    assert runtime.public_state(2)["can_start"] is True
+    assert runtime.public_state(2)["can_start"] is False
 
 
 def test_showdown_side_pot_awards_are_settled():

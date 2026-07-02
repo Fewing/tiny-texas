@@ -95,6 +95,9 @@ if (app) {
 
   function renderSeats() {
     seatsEl.innerHTML = "";
+    const dealerSeat = state.dealer_seat;
+    const smallBlindSeat = state.small_blind_seat ?? seatForAction("small_blind");
+    const bigBlindSeat = state.big_blind_seat ?? seatForAction("big_blind");
     for (const seat of state.players) {
       const seatNode = document.createElement("article");
       seatNode.className = `seat${seat.occupied ? "" : " empty"}${state.current_turn_seat === seat.seat_index ? " current-turn" : ""}`;
@@ -105,9 +108,13 @@ if (app) {
         continue;
       }
 
+      const roleBadges = [];
+      if (dealerSeat === seat.seat_index) roleBadges.push({ label: "庄家", className: "dealer-badge" });
+      if (smallBlindSeat === seat.seat_index) roleBadges.push({ label: "小盲", className: "small-blind-badge" });
+      if (bigBlindSeat === seat.seat_index) roleBadges.push({ label: "大盲", className: "big-blind-badge" });
       const badges = [];
-      if (state.dealer_seat === seat.seat_index) badges.push("庄位");
-      if (seat.ready) badges.push("已准备");
+      if (state.phase === "waiting" && seat.ready) badges.push("已准备");
+      if (state.phase !== "waiting" && seat.in_hand) badges.push("本手中");
       if (seat.folded) badges.push("已弃牌");
       if (seat.all_in) badges.push("全下");
       if (state.current_turn_seat === seat.seat_index) badges.push("行动中");
@@ -124,6 +131,7 @@ if (app) {
         <div class="seat-meta">
           <span class="badge">筹码 ${seat.stack}</span>
           <span class="badge">下注 ${seat.current_bet}</span>
+          ${roleBadges.map((badge) => `<span class="badge role-badge ${badge.className}">${badge.label}</span>`).join("")}
           ${rebuyBadge}
           ${badges.map((badge) => `<span class="badge">${badge}</span>`).join("")}
         </div>
@@ -150,6 +158,14 @@ if (app) {
       }
       seatsEl.appendChild(seatNode);
     }
+  }
+
+  function seatForAction(actionType) {
+    return [...(state.actions || [])].reverse().find((action) => (
+      action.hand_number === state.hand_number &&
+      action.action_type === actionType &&
+      Number.isInteger(action.seat_index)
+    ))?.seat_index ?? null;
   }
 
   function renderControls() {

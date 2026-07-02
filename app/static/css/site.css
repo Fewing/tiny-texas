@@ -409,6 +409,26 @@ input {
   padding: 4px 7px;
 }
 
+.badge.role-badge {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-weight: 900;
+}
+
+.badge.dealer-badge {
+  background: #e3b84d;
+  color: #16130a;
+}
+
+.badge.small-blind-badge {
+  background: #4fb7e3;
+  color: #071820;
+}
+
+.badge.big-blind-badge {
+  background: #f07d55;
+  color: #1f0c05;
+}
+
 .badge.rebuy-badge {
   border: 1px solid rgba(255, 220, 110, 0.72);
   background: linear-gradient(135deg, rgba(147, 32, 45, 0.92), rgba(234, 163, 65, 0.92));
