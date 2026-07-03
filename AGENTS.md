@@ -26,6 +26,8 @@ Use the local virtual environment when available:
 
 `pytest` runs unit and integration tests. `compileall` catches syntax/import-time issues. `uvicorn` starts the app at `http://127.0.0.1:8000`.
 
+Do not start the development server unless the user explicitly asks for it. The user will normally start and stop `uvicorn` themselves; use tests and compile checks for verification by default.
+
 Docker deployment is defined in `Dockerfile` and `docker-compose.yml`:
 
 ```powershell

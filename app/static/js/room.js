@@ -7,6 +7,7 @@ if (app) {
   const connectionState = document.querySelector("#connection-state");
   const seatsEl = document.querySelector("#seats");
   const communityEl = document.querySelector("#community-cards");
+  const playerHoleCardsEl = document.querySelector("#player-hole-cards");
   const potEl = document.querySelector("#pot-value");
   const controlsEl = document.querySelector("#action-controls");
   const resultEl = document.querySelector("#result-box");
@@ -28,12 +29,14 @@ if (app) {
     socket = new WebSocket(`${protocol}://${window.location.host}/ws/rooms/${roomCode}`);
     socket.addEventListener("open", () => {
       connectionState.textContent = "已连接";
+      connectionState.className = "connection-pill connected";
     });
     socket.addEventListener("close", () => {
       if (roomDeleted) {
         return;
       }
       connectionState.textContent = "连接已断开，正在重连...";
+      connectionState.className = "connection-pill reconnecting";
       window.setTimeout(connect, 1200);
     });
     socket.addEventListener("message", (event) => {
@@ -48,6 +51,7 @@ if (app) {
       if (message.type === "room.deleted") {
         roomDeleted = true;
         connectionState.textContent = "房间已删除";
+        connectionState.className = "connection-pill deleted";
         resultEl.innerHTML = '<p class="alert">房间已删除，正在返回大厅...</p>';
         window.setTimeout(() => window.location.assign("/lobby"), 800);
       }
@@ -77,6 +81,7 @@ if (app) {
   function render() {
     potEl.textContent = state.pot;
     communityEl.innerHTML = communityCardsHtml();
+    renderPlayerHandArea();
     renderSeats();
     renderControls();
     renderResult();
@@ -93,14 +98,62 @@ if (app) {
     return '<span class="muted">尚未发公共牌</span>';
   }
 
+  function renderPlayerHandArea() {
+    const viewerSeat = state.players.find((seat) => seat.occupied && seat.user_id === currentUserId);
+    if (viewerSeat?.hole_cards?.length) {
+      playerHoleCardsEl.className = "card-row";
+      playerHoleCardsEl.innerHTML = viewerSeat.hole_cards.map(cardHtml).join("");
+      return;
+    }
+
+    if (viewerSeat && state.phase === "waiting") {
+      playerHoleCardsEl.className = "player-hand-controls";
+      playerHoleCardsEl.innerHTML = "";
+      if (!viewerSeat.ready) {
+        const ready = document.createElement("button");
+        ready.className = "button primary hand-ready-button";
+        ready.type = "button";
+        ready.textContent = "准备";
+        ready.addEventListener("click", () => send("room.ready", { ready: true }));
+        playerHoleCardsEl.appendChild(ready);
+      } else {
+        const readyStatus = document.createElement("span");
+        readyStatus.className = "badge hand-ready-status";
+        readyStatus.textContent = "已准备";
+        playerHoleCardsEl.appendChild(readyStatus);
+      }
+      const stand = document.createElement("button");
+      stand.className = "button secondary hand-stand-button";
+      stand.type = "button";
+      stand.textContent = "离座";
+      stand.addEventListener("click", () => send("seat.leave", {}));
+      playerHoleCardsEl.appendChild(stand);
+      return;
+    }
+
+    playerHoleCardsEl.className = "card-row";
+    playerHoleCardsEl.innerHTML = '<span class="muted">暂无手牌</span>';
+  }
+
   function renderSeats() {
     seatsEl.innerHTML = "";
     const dealerSeat = state.dealer_seat;
     const smallBlindSeat = state.small_blind_seat ?? seatForAction("small_blind");
     const bigBlindSeat = state.big_blind_seat ?? seatForAction("big_blind");
+    const seatCount = state.players.length || state.seat_count || 1;
     for (const seat of state.players) {
+      const position = seatPosition(seat.seat_index, seatCount);
       const seatNode = document.createElement("article");
-      seatNode.className = `seat${seat.occupied ? "" : " empty"}${state.current_turn_seat === seat.seat_index ? " current-turn" : ""}`;
+      seatNode.className = [
+        "seat",
+        seat.occupied ? "" : "empty",
+        state.current_turn_seat === seat.seat_index ? "current-turn" : "",
+        seat.folded ? "folded-seat" : "",
+        seat.user_id === currentUserId ? "self-seat" : "",
+      ].filter(Boolean).join(" ");
+      seatNode.dataset.seatIndex = seat.seat_index;
+      seatNode.style.setProperty("--seat-x", `${position.x}%`);
+      seatNode.style.setProperty("--seat-y", `${position.y}%`);
       if (!seat.occupied) {
         seatNode.innerHTML = `<div>${seat.seat_index + 1} 号座位</div><button class="button secondary" type="button">入座</button>`;
         seatNode.querySelector("button").addEventListener("click", () => send("seat.take", { seat_index: seat.seat_index }));
@@ -109,15 +162,12 @@ if (app) {
       }
 
       const roleBadges = [];
-      if (dealerSeat === seat.seat_index) roleBadges.push({ label: "庄家", className: "dealer-badge" });
-      if (smallBlindSeat === seat.seat_index) roleBadges.push({ label: "小盲", className: "small-blind-badge" });
-      if (bigBlindSeat === seat.seat_index) roleBadges.push({ label: "大盲", className: "big-blind-badge" });
+      if (dealerSeat === seat.seat_index) roleBadges.push({ label: "庄", className: "dealer-badge" });
+      if (smallBlindSeat === seat.seat_index) roleBadges.push({ label: "小", className: "small-blind-badge" });
+      if (bigBlindSeat === seat.seat_index) roleBadges.push({ label: "大", className: "big-blind-badge" });
       const badges = [];
       if (state.phase === "waiting" && seat.ready) badges.push("已准备");
-      if (state.phase !== "waiting" && seat.in_hand) badges.push("本手中");
-      if (seat.folded) badges.push("已弃牌");
       if (seat.all_in) badges.push("全下");
-      if (state.current_turn_seat === seat.seat_index) badges.push("行动中");
       if (state.phase !== "waiting" && !seat.in_hand) badges.push("本手未参与");
       const rebuyBadge = seat.rebuy_count > 0
         ? `<span class="badge rebuy-badge">复活甲 x${seat.rebuy_count}</span>`
@@ -135,29 +185,42 @@ if (app) {
           ${rebuyBadge}
           ${badges.map((badge) => `<span class="badge">${badge}</span>`).join("")}
         </div>
-        <div class="card-row">${seat.hole_cards.map(cardHtml).join("")}</div>
       `;
-      if (seat.user_id === currentUserId && state.phase === "waiting") {
-        const row = document.createElement("div");
-        row.className = "action-row";
-        if (!seat.ready) {
-          const ready = document.createElement("button");
-          ready.className = "button primary";
-          ready.type = "button";
-          ready.textContent = "准备";
-          ready.addEventListener("click", () => send("room.ready", { ready: true }));
-          row.appendChild(ready);
-        }
-        const stand = document.createElement("button");
-        stand.className = "button secondary";
-        stand.type = "button";
-        stand.textContent = "离座";
-        stand.addEventListener("click", () => send("seat.leave", {}));
-        row.appendChild(stand);
-        seatNode.appendChild(row);
-      }
       seatsEl.appendChild(seatNode);
     }
+  }
+
+  function seatPosition(seatIndex, seatCount) {
+    const xMin = 18;
+    const xMax = 82;
+    const yMin = 18;
+    const yMax = 84;
+    const width = xMax - xMin;
+    const height = yMax - yMin;
+    const perimeter = 2 * (width + height);
+    let distance = (seatIndex * (perimeter / Math.max(seatCount, 1))) % perimeter;
+
+    if (distance <= width / 2) {
+      return { x: 50 - distance, y: yMax };
+    }
+
+    distance -= width / 2;
+    if (distance <= height) {
+      return { x: xMin, y: yMax - distance };
+    }
+
+    distance -= height;
+    if (distance <= width) {
+      return { x: xMin + distance, y: yMin };
+    }
+
+    distance -= width;
+    if (distance <= height) {
+      return { x: xMax, y: yMin + distance };
+    }
+
+    distance -= height;
+    return { x: xMax - distance, y: yMax };
   }
 
   function seatForAction(actionType) {
@@ -172,13 +235,12 @@ if (app) {
     controlsEl.innerHTML = "";
     const viewerSeat = state.players.find((seat) => seat.occupied && seat.user_id === currentUserId);
     const status = document.createElement("div");
-    status.className = "status-line";
+    status.className = "status-line action-status";
     status.textContent = `阶段：${phaseLabel(state.phase)} / 第 ${state.hand_number} 手牌`;
-    controlsEl.appendChild(status);
 
     if (state.phase === "waiting" && state.can_start) {
       const start = document.createElement("button");
-      start.className = "button primary";
+      start.className = "button primary action-button action-start";
       start.type = "button";
       start.textContent = "开始手牌";
       start.addEventListener("click", () => send("hand.start", {}));
@@ -192,6 +254,7 @@ if (app) {
         note.textContent = "你未参与本手，等本手结束后准备下一手。";
         controlsEl.appendChild(note);
       }
+      controlsEl.appendChild(status);
       return;
     }
 
@@ -205,14 +268,15 @@ if (app) {
         input.max = action.max;
         input.value = action.min;
         input.style.maxWidth = "120px";
-        const button = actionButton(actionLabel(action.type), () => send("hand.action", { action_type: action.type, amount: Number(input.value) }));
+        const button = actionButton(actionLabel(action.type), () => send("hand.action", { action_type: action.type, amount: Number(input.value) }), action.type);
         actionRow.appendChild(input);
         actionRow.appendChild(button);
         continue;
       }
-      actionRow.appendChild(actionButton(labelFor(action), () => send("hand.action", { action_type: action.type, amount: action.amount || 0 })));
+      actionRow.appendChild(actionButton(labelFor(action), () => send("hand.action", { action_type: action.type, amount: action.amount || 0 }), action.type));
     }
     controlsEl.appendChild(actionRow);
+    controlsEl.appendChild(status);
   }
 
   function renderResult() {
@@ -283,9 +347,9 @@ if (app) {
     )).join("");
   }
 
-  function actionButton(label, handler) {
+  function actionButton(label, handler, actionType = "") {
     const button = document.createElement("button");
-    button.className = "button secondary";
+    button.className = `button action-button action-${actionType}`;
     button.type = "button";
     button.textContent = label;
     button.addEventListener("click", handler);

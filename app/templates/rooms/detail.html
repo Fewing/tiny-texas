@@ -10,7 +10,11 @@
   <div class="room-heading">
     <div>
       <p class="eyebrow">房间 {{ room.code }}</p>
-      <h1>{{ room.name }}</h1>
+      <div class="room-title-line">
+        <h1>{{ room.name }}</h1>
+        <span id="connection-state" class="connection-pill">正在连接...</span>
+      </div>
+      <p class="page-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
       <p class="muted">{{ room.seat_count }} 个座位 / 盲注 {{ room.small_blind }}-{{ room.big_blind }} / 买入 {{ room.buy_in }}</p>
     </div>
     <div class="room-heading-actions">
@@ -20,10 +24,6 @@
           <button class="button danger" type="submit">删除房间</button>
         </form>
       {% endif %}
-      <form method="post" action="/rooms/{{ room.code }}/join">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="button secondary" type="submit">加入房间</button>
-      </form>
     </div>
   </div>
 
@@ -32,7 +32,7 @@
   <div class="table-layout">
     <div class="table-surface">
       <div class="board">
-        <div>
+        <div class="community-area">
           <span class="label">公共牌</span>
           <div id="community-cards" class="card-row"></div>
         </div>
@@ -40,13 +40,16 @@
           <span class="label">底池</span>
           <strong id="pot-value">0</strong>
         </div>
+        <div class="player-hand-area">
+          <span class="label">我的手牌</span>
+          <div id="player-hole-cards" class="card-row"></div>
+        </div>
       </div>
       <div id="seats" class="seat-grid"></div>
     </div>
     <aside class="table-panel">
-      <div id="connection-state" class="status-line">正在连接...</div>
-      <div id="result-box" class="result-box"></div>
       <div id="action-controls" class="action-controls"></div>
+      <div id="result-box" class="result-box"></div>
       <div>
         <h2>最近动作</h2>
         <ol id="action-log" class="action-log"></ol>
@@ -67,5 +70,5 @@
   </div>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}?v=20260702-4" defer></script>
+<script src="{{ url_for('static', path='/js/room.js') }}?v=20260703-4" defer></script>
 {% endblock %}
