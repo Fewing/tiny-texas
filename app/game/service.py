@@ -57,6 +57,8 @@ class GameService:
         runtime = self.room_manager.get_or_create(room)
         async with runtime.lock:
             runtime.set_ready(user.id, ready)
+            if ready and runtime.can_start_hand():
+                runtime.start_hand()
         await self.connections.broadcast_state(runtime)
         return runtime
 

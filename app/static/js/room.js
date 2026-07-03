@@ -346,15 +346,6 @@ if (app) {
     status.className = "status-line action-status";
     status.textContent = `阶段：${phaseLabel(state.phase)} / 第 ${state.hand_number} 手牌`;
 
-    if (state.phase === "waiting" && state.can_start) {
-      const start = document.createElement("button");
-      start.className = "button primary action-button action-start";
-      start.type = "button";
-      start.textContent = "开始手牌";
-      start.addEventListener("click", () => send("hand.start", {}));
-      controlsEl.appendChild(start);
-    }
-
     if (!state.legal_actions.length) {
       if (state.phase !== "waiting" && viewerSeat && !viewerSeat.in_hand) {
         const note = document.createElement("p");
