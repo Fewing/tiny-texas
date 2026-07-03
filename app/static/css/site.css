@@ -535,6 +535,13 @@ input {
   pointer-events: none;
 }
 
+.phrase-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
 .seat {
   position: absolute;
   left: var(--seat-x, 50%);
@@ -630,12 +637,13 @@ input {
 
 .phrase-bubble {
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
+  left: var(--seat-x, 50%);
+  top: var(--seat-y, 50%);
   z-index: 6;
   width: max-content;
   max-width: min(170px, 42vw);
-  transform: translateX(-50%);
+  --phrase-y: calc(-100% - 58px);
+  transform: translate(-50%, var(--phrase-y));
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 8px;
   background: #f8fbfa;
@@ -666,18 +674,18 @@ input {
 @keyframes phrase-pop {
   0% {
     opacity: 0;
-    transform: translate(-50%, 4px) scale(0.94);
+    transform: translate(-50%, calc(var(--phrase-y) + 4px)) scale(0.94);
   }
 
   12%,
   82% {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translate(-50%, var(--phrase-y)) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: translate(-50%, -5px) scale(0.98);
+    transform: translate(-50%, calc(var(--phrase-y) - 5px)) scale(0.98);
   }
 }
 
@@ -981,6 +989,7 @@ input {
   }
 
   .phrase-bubble {
+    --phrase-y: calc(-100% - 49px);
     max-width: 136px;
     padding: 6px 8px;
     font-size: 0.68rem;

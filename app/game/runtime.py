@@ -119,6 +119,7 @@ class PhraseEvent:
             "text": self.text,
             "sent_at": self.sent_at.isoformat(),
             "expires_at": self.expires_at.isoformat(),
+            "duration_ms": QUICK_PHRASE_TTL_SECONDS * 1000,
         }
 
 
@@ -168,7 +169,6 @@ class RoomRuntime:
     actions: list[ActionEvent] = field(default_factory=list)
     rebuy_counts: dict[int, int] = field(default_factory=dict)
     player_stacks: dict[int, int] = field(default_factory=dict)
-    active_phrases: dict[int, PhraseEvent] = field(default_factory=dict)
     phrase_sent_at: dict[int, datetime] = field(default_factory=dict)
     last_result: HandResult | None = None
     hand_started_at: datetime | None = None
@@ -244,7 +244,6 @@ class RoomRuntime:
         if player is None:
             return
         self._remember_player_stack(player)
-        self.active_phrases.pop(player.user_id, None)
         del self.players[seat_index]
 
     def set_connected(self, user_id: int, connected: bool) -> None:
@@ -283,7 +282,6 @@ class RoomRuntime:
         self.deck = shuffled_deck()
         self.actions = []
         self.last_result = None
-        self.active_phrases = {}
         self.small_blind_seat = None
         self.big_blind_seat = None
         self.hand_started_at = datetime.now(timezone.utc)
@@ -439,13 +437,10 @@ class RoomRuntime:
             sent_at=now,
             expires_at=now + timedelta(seconds=QUICK_PHRASE_TTL_SECONDS),
         )
-        self.active_phrases[player.user_id] = event
         self.phrase_sent_at[player.user_id] = now
-        self._prune_expired_phrases(now)
         return event
 
-    def public_state(self, viewer_user_id: int | None = None, now: datetime | None = None) -> dict:
-        now = now or datetime.now(timezone.utc)
+    def public_state(self, viewer_user_id: int | None = None) -> dict:
         seats = []
         for seat_index in range(self.config.seat_count):
             player = self.players.get(seat_index)
@@ -455,8 +450,6 @@ class RoomRuntime:
             hole_cards: list[str] = []
             if player.in_hand and player.hole_cards:
                 hole_cards = player.hole_cards if player.user_id == viewer_user_id else ["XX", "XX"]
-            phrase = self.active_phrases.get(player.user_id)
-            public_phrase = phrase.to_public() if phrase is not None and phrase.expires_at > now else None
             seats.append(
                 {
                     "seat_index": seat_index,
@@ -474,7 +467,6 @@ class RoomRuntime:
                     "current_bet": player.current_bet,
                     "total_bet": player.total_bet,
                     "hole_cards": hole_cards,
-                    "phrase": public_phrase,
                 }
             )
         return {
@@ -686,7 +678,6 @@ class RoomRuntime:
             player.current_bet = 0
             player.total_bet = 0
             player.hole_cards = []
-        self.active_phrases = {}
         return result
 
     def _record_action(
@@ -721,11 +712,6 @@ class RoomRuntime:
 
     def _remember_player_stack(self, player: PlayerRuntime) -> None:
         self.player_stacks[player.user_id] = player.stack
-
-    def _prune_expired_phrases(self, now: datetime) -> None:
-        for user_id, phrase in list(self.active_phrases.items()):
-            if phrase.expires_at <= now:
-                self.active_phrases.pop(user_id, None)
 
     def _player_for_user(self, user_id: int | None) -> PlayerRuntime | None:
         for player in self.players.values():

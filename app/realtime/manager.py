@@ -43,6 +43,10 @@ class ConnectionManager:
                 {"type": "state.snapshot", "payload": runtime.public_state(user_id)},
             )
 
+    async def broadcast_room(self, room_code: str, message: dict) -> None:
+        for user_id in list(self._connections.get(room_code, {})):
+            await self.send_to_user(room_code, user_id, message)
+
     async def close_room(self, room_code: str) -> None:
         room_connections = self._connections.pop(room_code, {})
         for user_connections in list(room_connections.values()):

@@ -84,8 +84,11 @@ class GameService:
     async def send_phrase(self, room: Room, user: User, text: str) -> RoomRuntime:
         runtime = self.room_manager.get_or_create(room)
         async with runtime.lock:
-            runtime.send_phrase(user.id, text)
-        await self.connections.broadcast_state(runtime)
+            phrase = runtime.send_phrase(user.id, text)
+        await self.connections.broadcast_room(
+            runtime.code,
+            {"type": "phrase.sent", "payload": phrase.to_public()},
+        )
         return runtime
 
 

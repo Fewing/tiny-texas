@@ -46,6 +46,7 @@
         </div>
       </div>
       <div id="seats" class="seat-grid"></div>
+      <div id="phrase-layer" class="phrase-layer" aria-live="polite"></div>
     </div>
     <aside class="table-panel">
       <div id="action-controls" class="action-controls"></div>
@@ -70,5 +71,5 @@
   </div>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}?v=20260703-6" defer></script>
+<script src="{{ url_for('static', path='/js/room.js') }}?v=20260703-7" defer></script>
 {% endblock %}

@@ -53,21 +53,26 @@ def test_quick_phrase_is_public_and_rate_limited():
     runtime.start_hand()
     now = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
-    runtime.send_phrase(1, QUICK_PHRASES[0], now=now)
-    public_state = runtime.public_state(2, now=now)
-    alice_phrase = public_state["players"][0]["phrase"]
+    phrase = runtime.send_phrase(1, QUICK_PHRASES[0], now=now)
+    public_state = runtime.public_state(2)
+    phrase_payload = phrase.to_public()
 
     assert public_state["quick_phrases"] == list(QUICK_PHRASES)
     assert public_state["phrase_cooldown_seconds"] == QUICK_PHRASE_COOLDOWN_SECONDS
-    assert alice_phrase["text"] == QUICK_PHRASES[0]
-    assert alice_phrase["seat_index"] == 0
+    assert phrase_payload["text"] == QUICK_PHRASES[0]
+    assert phrase_payload["seat_index"] == 0
+    assert phrase_payload["duration_ms"] == QUICK_PHRASE_TTL_SECONDS * 1000
 
     with pytest.raises(GameError, match="短语发送太快"):
         runtime.send_phrase(1, QUICK_PHRASES[1], now=now + timedelta(seconds=4))
 
-    runtime.send_phrase(1, QUICK_PHRASES[1], now=now + timedelta(seconds=QUICK_PHRASE_COOLDOWN_SECONDS))
+    next_phrase = runtime.send_phrase(
+        1,
+        QUICK_PHRASES[1],
+        now=now + timedelta(seconds=QUICK_PHRASE_COOLDOWN_SECONDS),
+    )
 
-    assert runtime.public_state(2, now=now + timedelta(seconds=5))["players"][0]["phrase"]["text"] == QUICK_PHRASES[1]
+    assert next_phrase.text == QUICK_PHRASES[1]
 
 
 def test_quick_phrase_rejects_invalid_or_cardless_sender():
@@ -81,7 +86,7 @@ def test_quick_phrase_rejects_invalid_or_cardless_sender():
         runtime.send_phrase(1, QUICK_PHRASES[0])
 
 
-def test_quick_phrase_expires_from_public_state():
+def test_quick_phrase_is_not_persisted_in_public_state():
     runtime = make_runtime()
     seat_two_players(runtime)
     runtime.start_hand()
@@ -89,8 +94,7 @@ def test_quick_phrase_expires_from_public_state():
 
     runtime.send_phrase(1, QUICK_PHRASES[0], now=now)
 
-    expired_state = runtime.public_state(2, now=now + timedelta(seconds=QUICK_PHRASE_TTL_SECONDS + 1))
-    assert expired_state["players"][0]["phrase"] is None
+    assert "phrase" not in runtime.public_state(2)["players"][0]
 
 
 def test_public_state_exposes_dealer_and_blind_seats():

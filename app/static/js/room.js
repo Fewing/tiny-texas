@@ -6,6 +6,7 @@ if (app) {
   const initialState = JSON.parse(document.querySelector("#initial-state").textContent);
   const connectionState = document.querySelector("#connection-state");
   const seatsEl = document.querySelector("#seats");
+  const phraseLayerEl = document.querySelector("#phrase-layer");
   const communityEl = document.querySelector("#community-cards");
   const playerHoleCardsEl = document.querySelector("#player-hole-cards");
   const potEl = document.querySelector("#pot-value");
@@ -20,7 +21,6 @@ if (app) {
   let shownResultHandNumber = null;
   let roomDeleted = false;
   let phrasePickerOpen = false;
-  let phraseExpiryTimer = null;
 
   resultModalClose?.addEventListener("click", () => {
     resultModal.hidden = true;
@@ -58,6 +58,9 @@ if (app) {
       if (message.type === "state.snapshot") {
         state = message.payload;
         render();
+      }
+      if (message.type === "phrase.sent") {
+        showPhraseBubble(message.payload);
       }
       if (message.type === "error") {
         resultEl.innerHTML = `<p class="alert">${escapeHtml(message.payload.message)}</p>`;
@@ -100,7 +103,6 @@ if (app) {
     renderControls();
     renderResult();
     renderLog();
-    schedulePhraseExpiryRender();
   }
 
   function communityCardsHtml() {
@@ -193,7 +195,6 @@ if (app) {
       const rebuyBadge = seat.rebuy_count > 0
         ? `<span class="badge rebuy-badge">复活甲 x${seat.rebuy_count}</span>`
         : "";
-      const phraseBubble = phraseBubbleHtml(seat.phrase);
       const canSendPhrase = canSendPhraseFromSeat(seat);
       if (canSendPhrase) {
         seatNode.classList.add("phrase-enabled");
@@ -203,7 +204,6 @@ if (app) {
       }
 
       seatNode.innerHTML = `
-        ${phraseBubble}
         <div class="seat-name">
           <span>${escapeHtml(seat.username)}</span>
           <span>#${seat.seat_index + 1}</span>
@@ -273,46 +273,29 @@ if (app) {
     seatNode.appendChild(picker);
   }
 
-  function phraseBubbleHtml(phrase) {
-    if (!isPhraseActive(phrase)) {
-      return "";
-    }
-    return `<div class="phrase-bubble" style="--phrase-duration: ${phraseDurationMs(phrase)}ms">${escapeHtml(phrase.text)}</div>`;
-  }
-
-  function isPhraseActive(phrase) {
-    if (!phrase?.text || !phrase.expires_at) {
-      return false;
-    }
-    const expiresAt = Date.parse(phrase.expires_at);
-    return Number.isFinite(expiresAt) && expiresAt > Date.now();
-  }
-
-  function phraseDurationMs(phrase) {
-    const fallback = Number(state.phrase_cooldown_seconds || 4) * 1000;
-    const expiresAt = Date.parse(phrase?.expires_at || "");
-    if (!Number.isFinite(expiresAt)) {
-      return fallback;
-    }
-    return Math.max(800, expiresAt - Date.now());
-  }
-
-  function schedulePhraseExpiryRender() {
-    if (phraseExpiryTimer) {
-      window.clearTimeout(phraseExpiryTimer);
-      phraseExpiryTimer = null;
-    }
-    const expiryTimes = (state.players || [])
-      .map((seat) => Date.parse(seat.phrase?.expires_at || ""))
-      .filter((expiresAt) => Number.isFinite(expiresAt) && expiresAt > Date.now());
-    if (!expiryTimes.length) {
+  function showPhraseBubble(phrase) {
+    if (!phraseLayerEl || !phrase?.text || !Number.isInteger(phrase.seat_index)) {
       return;
     }
-    const nextExpiry = Math.min(...expiryTimes);
-    phraseExpiryTimer = window.setTimeout(() => {
-      phraseExpiryTimer = null;
-      render();
-    }, Math.max(0, nextExpiry - Date.now()) + 80);
+    for (const bubble of Array.from(phraseLayerEl.querySelectorAll(".phrase-bubble"))) {
+      if (Number(bubble.dataset.userId) === Number(phrase.user_id)) {
+        bubble.remove();
+      }
+    }
+
+    const seatCount = state.players?.length || state.room?.seat_count || 1;
+    const position = seatPosition(phrase.seat_index, seatCount);
+    const duration = Number(phrase.duration_ms || 4000);
+    const bubble = document.createElement("div");
+    bubble.className = "phrase-bubble";
+    bubble.dataset.userId = String(phrase.user_id);
+    bubble.textContent = phrase.text;
+    bubble.style.setProperty("--seat-x", `${position.x}%`);
+    bubble.style.setProperty("--seat-y", `${position.y}%`);
+    bubble.style.setProperty("--phrase-duration", `${duration}ms`);
+    bubble.addEventListener("animationend", () => bubble.remove(), { once: true });
+    phraseLayerEl.appendChild(bubble);
+    window.setTimeout(() => bubble.remove(), duration + 250);
   }
 
   function seatPosition(seatIndex, seatCount) {
