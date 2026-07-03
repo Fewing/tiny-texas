@@ -479,12 +479,8 @@ input {
 
 .seat.current-turn {
   z-index: 3;
-  border-color: #fff0a5;
   background: #e3b84d;
   color: #16130a;
-  box-shadow:
-    0 0 0 2px rgba(255, 240, 165, 0.85),
-    0 12px 28px rgba(0, 0, 0, 0.34);
 }
 
 .seat.current-turn .seat-meta {
@@ -505,7 +501,10 @@ input {
 }
 
 .seat.self-seat {
-  border-color: rgba(79, 183, 227, 0.76);
+  border: 2px solid #4fb7e3;
+  box-shadow:
+    0 0 0 2px rgba(79, 183, 227, 0.22),
+    0 0 24px rgba(79, 183, 227, 0.38);
 }
 
 .seat.empty {
