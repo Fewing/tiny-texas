@@ -1,15 +1,66 @@
+# Version control and repository metadata
 .git
-.pytest_cache
+.gitignore
+.github
+AGENTS.md
+
+# Local Python environments and bytecode
 .venv
 venv
+env
+ENV
 __pycache__
-*.pyc
+*.py[cod]
+*$py.class
+
+# Python packaging/build artifacts
 *.egg-info
+.eggs
+build
+dist
+pip-wheel-metadata
+
+# Test, lint, type-check, and coverage artifacts
 .pytest_cache
 .mypy_cache
 .ruff_cache
-build
-dist
+.pyre
+.tox
+.nox
+.cache
 htmlcov
 .coverage
+.coverage.*
+coverage.xml
+tests
+
+# Local runtime data
 data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Local config, secrets, and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# Editor, OS, and log noise
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*.log
+
+# Local deployment helpers
+docker-compose.yml
+docker-compose.*.yml
