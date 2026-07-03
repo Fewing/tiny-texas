@@ -48,4 +48,4 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/tiny_texas_deploy_key
           chmod 600 ~/.ssh/tiny_texas_deploy_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/tiny_texas_deploy_key "$SSH_USER@$SSH_HOST" "cd '$DEPLOY_DIR' && docker-compose pull && docker-compose up -d --force-recreate"
+          ssh -i ~/.ssh/tiny_texas_deploy_key "$SSH_USER@$SSH_HOST" "cd '$DEPLOY_DIR' && docker-compose down && docker-compose pull && docker-compose up -d"
