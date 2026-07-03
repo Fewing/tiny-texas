@@ -19,9 +19,23 @@ if (app) {
   let state = initialState;
   let shownResultHandNumber = null;
   let roomDeleted = false;
+  let phrasePickerOpen = false;
+  let phraseExpiryTimer = null;
 
   resultModalClose?.addEventListener("click", () => {
     resultModal.hidden = true;
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!phrasePickerOpen) return;
+    if (playerHoleCardsEl.contains(event.target) || event.target.closest(".seat.self-seat")) return;
+    closePhrasePicker();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePhrasePicker();
+    }
   });
 
   function connect() {
@@ -86,6 +100,7 @@ if (app) {
     renderControls();
     renderResult();
     renderLog();
+    schedulePhraseExpiryRender();
   }
 
   function communityCardsHtml() {
@@ -101,11 +116,17 @@ if (app) {
   function renderPlayerHandArea() {
     const viewerSeat = state.players.find((seat) => seat.occupied && seat.user_id === currentUserId);
     if (viewerSeat?.hole_cards?.length) {
-      playerHoleCardsEl.className = "card-row";
+      playerHoleCardsEl.className = "card-row player-card-row phrase-trigger-area";
       playerHoleCardsEl.innerHTML = viewerSeat.hole_cards.map(cardHtml).join("");
+      playerHoleCardsEl.onclick = (event) => {
+        event.stopPropagation();
+        togglePhrasePicker();
+      };
       return;
     }
 
+    phrasePickerOpen = false;
+    playerHoleCardsEl.onclick = null;
     if (viewerSeat && state.phase === "waiting") {
       playerHoleCardsEl.className = "player-hand-controls";
       playerHoleCardsEl.innerHTML = "";
@@ -172,8 +193,17 @@ if (app) {
       const rebuyBadge = seat.rebuy_count > 0
         ? `<span class="badge rebuy-badge">复活甲 x${seat.rebuy_count}</span>`
         : "";
+      const phraseBubble = phraseBubbleHtml(seat.phrase);
+      const canSendPhrase = canSendPhraseFromSeat(seat);
+      if (canSendPhrase) {
+        seatNode.classList.add("phrase-enabled");
+        if (phrasePickerOpen) {
+          seatNode.classList.add("phrase-picker-open");
+        }
+      }
 
       seatNode.innerHTML = `
+        ${phraseBubble}
         <div class="seat-name">
           <span>${escapeHtml(seat.username)}</span>
           <span>#${seat.seat_index + 1}</span>
@@ -186,8 +216,103 @@ if (app) {
           ${badges.map((badge) => `<span class="badge">${badge}</span>`).join("")}
         </div>
       `;
+      if (canSendPhrase) {
+        seatNode.addEventListener("click", (event) => {
+          event.stopPropagation();
+          togglePhrasePicker();
+        });
+        if (phrasePickerOpen) {
+          renderPhrasePicker(seatNode, position);
+        }
+      }
       seatsEl.appendChild(seatNode);
     }
+  }
+
+  function canSendPhraseFromSeat(seat) {
+    return seat.occupied && seat.user_id === currentUserId && seat.hole_cards?.length;
+  }
+
+  function togglePhrasePicker() {
+    if (phrasePickerOpen) {
+      closePhrasePicker();
+      return;
+    }
+    phrasePickerOpen = true;
+    renderSeats();
+  }
+
+  function closePhrasePicker() {
+    phrasePickerOpen = false;
+    renderSeats();
+  }
+
+  function renderPhrasePicker(seatNode, position) {
+    const phrases = state.quick_phrases || [];
+    if (!phrasePickerOpen || !phrases.length) {
+      phrasePickerOpen = false;
+      return;
+    }
+    const picker = document.createElement("div");
+    picker.className = `phrase-picker${position.y < 35 ? " below" : ""}`;
+    picker.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    for (const phrase of phrases) {
+      const option = document.createElement("button");
+      option.className = "phrase-option";
+      option.type = "button";
+      option.textContent = phrase;
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        send("phrase.send", { text: phrase });
+        closePhrasePicker();
+      });
+      picker.appendChild(option);
+    }
+    seatNode.appendChild(picker);
+  }
+
+  function phraseBubbleHtml(phrase) {
+    if (!isPhraseActive(phrase)) {
+      return "";
+    }
+    return `<div class="phrase-bubble" style="--phrase-duration: ${phraseDurationMs(phrase)}ms">${escapeHtml(phrase.text)}</div>`;
+  }
+
+  function isPhraseActive(phrase) {
+    if (!phrase?.text || !phrase.expires_at) {
+      return false;
+    }
+    const expiresAt = Date.parse(phrase.expires_at);
+    return Number.isFinite(expiresAt) && expiresAt > Date.now();
+  }
+
+  function phraseDurationMs(phrase) {
+    const fallback = Number(state.phrase_cooldown_seconds || 4) * 1000;
+    const expiresAt = Date.parse(phrase?.expires_at || "");
+    if (!Number.isFinite(expiresAt)) {
+      return fallback;
+    }
+    return Math.max(800, expiresAt - Date.now());
+  }
+
+  function schedulePhraseExpiryRender() {
+    if (phraseExpiryTimer) {
+      window.clearTimeout(phraseExpiryTimer);
+      phraseExpiryTimer = null;
+    }
+    const expiryTimes = (state.players || [])
+      .map((seat) => Date.parse(seat.phrase?.expires_at || ""))
+      .filter((expiresAt) => Number.isFinite(expiresAt) && expiresAt > Date.now());
+    if (!expiryTimes.length) {
+      return;
+    }
+    const nextExpiry = Math.min(...expiryTimes);
+    phraseExpiryTimer = window.setTimeout(() => {
+      phraseExpiryTimer = null;
+      render();
+    }, Math.max(0, nextExpiry - Date.now()) + 80);
   }
 
   function seatPosition(seatIndex, seatCount) {

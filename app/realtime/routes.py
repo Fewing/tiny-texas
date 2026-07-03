@@ -84,6 +84,8 @@ async def _handle_message(websocket: WebSocket, db, room: Room, user, message: d
             action_type = payload.get("action_type") or payload.get("type")
             amount = int(payload.get("amount") or 0)
             await service.submit_action(room, user, action_type, amount)
+        elif message_type == "phrase.send":
+            await service.send_phrase(room, user, str(payload.get("text") or ""))
         else:
             raise GameError("不支持的消息类型。")
         await websocket.send_json({"type": "action.accepted", "request_id": request_id, "payload": {}})

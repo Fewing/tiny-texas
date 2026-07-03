@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from math import ceil
 
 from app.game.cards import shuffled_deck
 from app.game.evaluator import describe, evaluate
@@ -14,6 +15,16 @@ FLOP = "flop"
 TURN = "turn"
 RIVER = "river"
 BETTING_PHASES = {PREFLOP, FLOP, TURN, RIVER}
+QUICK_PHRASES = (
+    "我要收米了",
+    "让你们赢！",
+    "今天送米",
+    "这把做慈善",
+    "再看一张",
+    "我听牌了",
+)
+QUICK_PHRASE_COOLDOWN_SECONDS = 5
+QUICK_PHRASE_TTL_SECONDS = 4
 
 
 class GameError(ValueError):
@@ -92,6 +103,26 @@ class ActionEvent:
 
 
 @dataclass(frozen=True)
+class PhraseEvent:
+    user_id: int
+    username: str
+    seat_index: int
+    text: str
+    sent_at: datetime
+    expires_at: datetime
+
+    def to_public(self) -> dict:
+        return {
+            "user_id": self.user_id,
+            "username": self.username,
+            "seat_index": self.seat_index,
+            "text": self.text,
+            "sent_at": self.sent_at.isoformat(),
+            "expires_at": self.expires_at.isoformat(),
+        }
+
+
+@dataclass(frozen=True)
 class HandResult:
     room_code: str
     hand_number: int
@@ -137,6 +168,8 @@ class RoomRuntime:
     actions: list[ActionEvent] = field(default_factory=list)
     rebuy_counts: dict[int, int] = field(default_factory=dict)
     player_stacks: dict[int, int] = field(default_factory=dict)
+    active_phrases: dict[int, PhraseEvent] = field(default_factory=dict)
+    phrase_sent_at: dict[int, datetime] = field(default_factory=dict)
     last_result: HandResult | None = None
     hand_started_at: datetime | None = None
 
@@ -211,6 +244,7 @@ class RoomRuntime:
         if player is None:
             return
         self._remember_player_stack(player)
+        self.active_phrases.pop(player.user_id, None)
         del self.players[seat_index]
 
     def set_connected(self, user_id: int, connected: bool) -> None:
@@ -249,6 +283,7 @@ class RoomRuntime:
         self.deck = shuffled_deck()
         self.actions = []
         self.last_result = None
+        self.active_phrases = {}
         self.small_blind_seat = None
         self.big_blind_seat = None
         self.hand_started_at = datetime.now(timezone.utc)
@@ -377,7 +412,40 @@ class RoomRuntime:
         self._record_action(player.user_id, player.seat_index, action_type, committed or target_total, {"target": target_total})
         return self._advance_after_player_action(player.seat_index)
 
-    def public_state(self, viewer_user_id: int | None = None) -> dict:
+    def send_phrase(self, user_id: int, text: str, now: datetime | None = None) -> PhraseEvent:
+        now = now or datetime.now(timezone.utc)
+        phrase = str(text).strip()
+        if phrase not in QUICK_PHRASES:
+            raise GameError("请选择预设短语。")
+
+        player = self._player_for_user(user_id)
+        if player is None:
+            raise GameError("请先入座再发送短语。")
+        if not player.in_hand or not player.hole_cards:
+            raise GameError("只有拿到手牌后才能发送短语。")
+
+        last_sent_at = self.phrase_sent_at.get(user_id)
+        if last_sent_at is not None:
+            elapsed = (now - last_sent_at).total_seconds()
+            remaining = QUICK_PHRASE_COOLDOWN_SECONDS - elapsed
+            if remaining > 0:
+                raise GameError(f"短语发送太快，请 {ceil(remaining)} 秒后再试。")
+
+        event = PhraseEvent(
+            user_id=player.user_id,
+            username=player.username,
+            seat_index=player.seat_index,
+            text=phrase,
+            sent_at=now,
+            expires_at=now + timedelta(seconds=QUICK_PHRASE_TTL_SECONDS),
+        )
+        self.active_phrases[player.user_id] = event
+        self.phrase_sent_at[player.user_id] = now
+        self._prune_expired_phrases(now)
+        return event
+
+    def public_state(self, viewer_user_id: int | None = None, now: datetime | None = None) -> dict:
+        now = now or datetime.now(timezone.utc)
         seats = []
         for seat_index in range(self.config.seat_count):
             player = self.players.get(seat_index)
@@ -387,6 +455,8 @@ class RoomRuntime:
             hole_cards: list[str] = []
             if player.in_hand and player.hole_cards:
                 hole_cards = player.hole_cards if player.user_id == viewer_user_id else ["XX", "XX"]
+            phrase = self.active_phrases.get(player.user_id)
+            public_phrase = phrase.to_public() if phrase is not None and phrase.expires_at > now else None
             seats.append(
                 {
                     "seat_index": seat_index,
@@ -404,6 +474,7 @@ class RoomRuntime:
                     "current_bet": player.current_bet,
                     "total_bet": player.total_bet,
                     "hole_cards": hole_cards,
+                    "phrase": public_phrase,
                 }
             )
         return {
@@ -430,6 +501,8 @@ class RoomRuntime:
             "can_start": self.can_start_hand(viewer_user_id),
             "last_result": self.last_result.to_public() if self.last_result else None,
             "actions": [event.to_public() for event in self.actions[-20:]],
+            "quick_phrases": list(QUICK_PHRASES),
+            "phrase_cooldown_seconds": QUICK_PHRASE_COOLDOWN_SECONDS,
             "viewer_user_id": viewer_user_id,
         }
 
@@ -613,6 +686,7 @@ class RoomRuntime:
             player.current_bet = 0
             player.total_bet = 0
             player.hole_cards = []
+        self.active_phrases = {}
         return result
 
     def _record_action(
@@ -647,6 +721,11 @@ class RoomRuntime:
 
     def _remember_player_stack(self, player: PlayerRuntime) -> None:
         self.player_stacks[player.user_id] = player.stack
+
+    def _prune_expired_phrases(self, now: datetime) -> None:
+        for user_id, phrase in list(self.active_phrases.items()):
+            if phrase.expires_at <= now:
+                self.active_phrases.pop(user_id, None)
 
     def _player_for_user(self, user_id: int | None) -> PlayerRuntime | None:
         for player in self.players.values():

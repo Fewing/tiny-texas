@@ -1,4 +1,15 @@
-from app.game.runtime import RoomConfig, RoomRuntime
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from app.game.runtime import (
+    QUICK_PHRASE_COOLDOWN_SECONDS,
+    QUICK_PHRASE_TTL_SECONDS,
+    QUICK_PHRASES,
+    GameError,
+    RoomConfig,
+    RoomRuntime,
+)
 
 
 def make_runtime() -> RoomRuntime:
@@ -34,6 +45,52 @@ def test_public_state_hides_other_players_hole_cards():
 
     assert len(alice_seat["hole_cards"]) == 2
     assert bob_seat["hole_cards"] == ["XX", "XX"]
+
+
+def test_quick_phrase_is_public_and_rate_limited():
+    runtime = make_runtime()
+    seat_two_players(runtime)
+    runtime.start_hand()
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    runtime.send_phrase(1, QUICK_PHRASES[0], now=now)
+    public_state = runtime.public_state(2, now=now)
+    alice_phrase = public_state["players"][0]["phrase"]
+
+    assert public_state["quick_phrases"] == list(QUICK_PHRASES)
+    assert public_state["phrase_cooldown_seconds"] == QUICK_PHRASE_COOLDOWN_SECONDS
+    assert alice_phrase["text"] == QUICK_PHRASES[0]
+    assert alice_phrase["seat_index"] == 0
+
+    with pytest.raises(GameError, match="短语发送太快"):
+        runtime.send_phrase(1, QUICK_PHRASES[1], now=now + timedelta(seconds=4))
+
+    runtime.send_phrase(1, QUICK_PHRASES[1], now=now + timedelta(seconds=QUICK_PHRASE_COOLDOWN_SECONDS))
+
+    assert runtime.public_state(2, now=now + timedelta(seconds=5))["players"][0]["phrase"]["text"] == QUICK_PHRASES[1]
+
+
+def test_quick_phrase_rejects_invalid_or_cardless_sender():
+    runtime = make_runtime()
+    runtime.seat_player(1, "alice", 0)
+
+    with pytest.raises(GameError, match="请选择预设短语"):
+        runtime.send_phrase(1, "自定义短语")
+
+    with pytest.raises(GameError, match="只有拿到手牌后"):
+        runtime.send_phrase(1, QUICK_PHRASES[0])
+
+
+def test_quick_phrase_expires_from_public_state():
+    runtime = make_runtime()
+    seat_two_players(runtime)
+    runtime.start_hand()
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    runtime.send_phrase(1, QUICK_PHRASES[0], now=now)
+
+    expired_state = runtime.public_state(2, now=now + timedelta(seconds=QUICK_PHRASE_TTL_SECONDS + 1))
+    assert expired_state["players"][0]["phrase"] is None
 
 
 def test_public_state_exposes_dealer_and_blind_seats():

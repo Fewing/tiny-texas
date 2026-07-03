@@ -81,6 +81,13 @@ class GameService:
         await self.connections.broadcast_state(runtime)
         return runtime
 
+    async def send_phrase(self, room: Room, user: User, text: str) -> RoomRuntime:
+        runtime = self.room_manager.get_or_create(room)
+        async with runtime.lock:
+            runtime.send_phrase(user.id, text)
+        await self.connections.broadcast_state(runtime)
+        return runtime
+
 
 def _get_room_player(db: DbSession, room: Room, user: User) -> RoomPlayer | None:
     return db.execute(
