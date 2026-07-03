@@ -35,3 +35,17 @@ jobs:
         shell: bash
         run: |
           docker push "$IMAGE_TAG"
+
+      - name: Deploy to test server
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_IP }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_USER: root
+          DEPLOY_DIR: /root/tiny-texas
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/tiny_texas_deploy_key
+          chmod 600 ~/.ssh/tiny_texas_deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/tiny_texas_deploy_key "$SSH_USER@$SSH_HOST" "cd '$DEPLOY_DIR' && docker-compose pull && docker-compose up -d --force-recreate"

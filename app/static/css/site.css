@@ -293,6 +293,10 @@ input {
   align-items: end;
 }
 
+.room-heading h1 {
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+}
+
 .table-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
