@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from app.bots.evaluation import PREFLOP_SCORES, preflop_strength
-from app.bots.monte_carlo import MonteCarloBotConfig, SimpleMonteCarloBot
+from app.bots.monte_carlo import MonteCarloBot, MonteCarloBotConfig
 from app.game.models import BotObservation, PlayerAction
 
 
@@ -91,35 +91,37 @@ BOT_STRATEGY_DEFINITIONS: dict[str, BotStrategyDefinition] = {
             ),
         },
     ),
-    "simple_monte_carlo": BotStrategyDefinition(
-        label="轻量 Monte Carlo",
-        description="翻前规则表，翻后小样本胜率估算。",
+    "monte_carlo": BotStrategyDefinition(
+        label="Monte Carlo",
+        description="翻前规则表，翻后范围抽样和 EV 决策。",
         default_variant="balanced",
         variants={
             "tight": BotVariantDefinition(
                 label="保守",
-                description="少诈唬，只用较强胜率下注和加注。",
-                factory=lambda: SimpleMonteCarloBot(
+                description="更收紧范围，偏向高胜率价值下注。",
+                factory=lambda: MonteCarloBot(
                     MonteCarloBotConfig(
-                        value_bet_threshold=0.72,
-                        value_raise_threshold=0.84,
-                        bluff_frequency=0.03,
+                        value_bet_threshold=0.68,
+                        value_raise_threshold=0.80,
+                        bluff_frequency=0.025,
+                        aggression=0.86,
                     )
                 ),
             ),
             "balanced": BotVariantDefinition(
                 label="均衡",
-                description="默认紧凶风格，兼顾稳定和主动性。",
-                factory=lambda: SimpleMonteCarloBot(MonteCarloBotConfig()),
+                description="默认强度配置，兼顾胜率、底池赔率和位置。",
+                factory=lambda: MonteCarloBot(MonteCarloBotConfig()),
             ),
             "aggressive": BotVariantDefinition(
                 label="激进",
-                description="更频繁下注和诈唬，抽样稍少以控制成本。",
-                factory=lambda: SimpleMonteCarloBot(
+                description="更主动下注和加注，接受更高波动。",
+                factory=lambda: MonteCarloBot(
                     MonteCarloBotConfig(
-                        value_bet_threshold=0.58,
-                        value_raise_threshold=0.70,
+                        value_bet_threshold=0.56,
+                        value_raise_threshold=0.68,
                         bluff_frequency=0.12,
+                        aggression=1.18,
                     )
                 ),
             ),
@@ -133,12 +135,12 @@ BOT_STRATEGIES: dict[str, Callable[[], BotStrategy]] = {
 }
 
 
-def create_bot_strategy(name: str = "simple_monte_carlo", variant: str | None = None) -> BotStrategy:
+def create_bot_strategy(name: str = "monte_carlo", variant: str | None = None) -> BotStrategy:
     strategy_name, variant_name = normalize_bot_selection(name, variant)
     return BOT_STRATEGY_DEFINITIONS[strategy_name].variants[variant_name].factory()
 
 
-def normalize_bot_selection(name: str = "simple_monte_carlo", variant: str | None = None) -> tuple[str, str]:
+def normalize_bot_selection(name: str = "monte_carlo", variant: str | None = None) -> tuple[str, str]:
     try:
         definition = BOT_STRATEGY_DEFINITIONS[name]
     except KeyError as exc:
@@ -196,9 +198,9 @@ __all__ = [
     "BotVariantDefinition",
     "BotStrategy",
     "CheckFoldBot",
+    "MonteCarloBot",
     "MonteCarloBotConfig",
     "PREFLOP_SCORES",
-    "SimpleMonteCarloBot",
     "choose_bot_username",
     "create_bot_strategy",
     "list_bot_strategy_options",
@@ -206,4 +208,3 @@ __all__ = [
     "normalize_bot_selection",
     "preflop_strength",
 ]
-

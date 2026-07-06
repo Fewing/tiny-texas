@@ -91,13 +91,13 @@ async def test_owner_can_add_and_remove_memory_bot():
     runtime = service.room_manager.get_or_create(room)
     runtime.seat_player(owner.id, owner.username, 0)
 
-    await service.add_bot(room, owner, 1, "simple_monte_carlo", "tight")
+    await service.add_bot(room, owner, 1, "monte_carlo", "tight")
 
     bot = runtime.players[1]
     assert bot.user_id < 0
     assert bot.username.endswith("BOT")
     assert bot.player_type == "bot"
-    assert bot.bot_strategy == "simple_monte_carlo"
+    assert bot.bot_strategy == "monte_carlo"
     assert bot.bot_variant == "tight"
     assert bot.ready is True
 

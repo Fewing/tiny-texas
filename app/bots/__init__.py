@@ -1,6 +1,6 @@
 """Bot extension points."""
 
-from app.bots.monte_carlo import MonteCarloBotConfig, SimpleMonteCarloBot
+from app.bots.monte_carlo import MonteCarloBot, MonteCarloBotConfig
 from app.bots.strategies import (
     BOT_NAME_POOL,
     BOT_STRATEGIES,
@@ -24,8 +24,8 @@ __all__ = [
     "BotStrategyDefinition",
     "BotVariantDefinition",
     "CheckFoldBot",
+    "MonteCarloBot",
     "MonteCarloBotConfig",
-    "SimpleMonteCarloBot",
     "choose_bot_username",
     "create_bot_strategy",
     "list_bot_strategy_options",

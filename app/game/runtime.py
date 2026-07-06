@@ -555,9 +555,13 @@ class RoomRuntime:
                 if opponent.in_hand and not opponent.folded and opponent.user_id != user_id
             ]
         )
+        active_seat_count = len([opponent for opponent in self.players.values() if opponent.in_hand and not opponent.folded])
+        acting_seats = [seat for seat, opponent in self.players.items() if self._can_act(opponent)]
+        players_to_act = self._players_to_act_after(player.seat_index, acting_seats)
         return BotObservation(
             room_code=self.config.code,
             hand_number=self.hand_number,
+            phase=self.phase,
             seat_index=player.seat_index,
             hole_cards=list(player.hole_cards),
             community_cards=list(self.community_cards),
@@ -567,6 +571,9 @@ class RoomRuntime:
             legal_actions=legal_actions,
             action_history=[event.to_public() for event in self.actions[-20:]],
             opponent_count=max(1, opponent_count),
+            active_seat_count=max(1, active_seat_count),
+            players_to_act=players_to_act,
+            position=self._position_label(active_seat_count, players_to_act),
         )
 
     def can_start_hand(self, viewer_user_id: int | None = None) -> bool:
@@ -806,6 +813,24 @@ class RoomRuntime:
             if candidate in self.players and predicate(candidate):
                 return candidate
         return None
+
+    def _players_to_act_after(self, seat_index: int, acting_seats: list[int]) -> int:
+        acting_seat_set = set(acting_seats)
+        count = 0
+        for offset in range(1, self.config.seat_count):
+            candidate = (seat_index + offset) % self.config.seat_count
+            if candidate in acting_seat_set:
+                count += 1
+        return count
+
+    def _position_label(self, active_seat_count: int, players_to_act: int) -> str:
+        if active_seat_count <= 2:
+            return "heads_up"
+        if players_to_act <= 1:
+            return "late"
+        if players_to_act >= max(2, active_seat_count - 2):
+            return "early"
+        return "middle"
 
     def _ordered_from(self, start_seat: int, seats: list[int]) -> list[int]:
         seat_set = set(seats)
