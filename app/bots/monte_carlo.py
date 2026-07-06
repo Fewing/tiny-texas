@@ -22,7 +22,7 @@ class MonteCarloBotConfig:
     # Total decision budget. Postflop uses it for sampling; preflop waits out the rest.
     decision_time_seconds: float = 0.5
     # Minimum visible thinking time for one bot action.
-    minimum_action_seconds: float = 0.5
+    minimum_action_seconds: float = 2.0
     # Minimum estimated equity for value betting when no call is required.
     value_bet_threshold: float = 0.62
     # Minimum estimated equity for value raising over an existing bet.
