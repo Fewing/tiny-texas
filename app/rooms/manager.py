@@ -52,6 +52,6 @@ class RoomManager:
             active_seats.add(room_player.seat_index)
 
         for seat in list(runtime.players):
-            if seat not in active_seats:
+            if seat not in active_seats and runtime.players[seat].player_type != "bot":
                 runtime.unseat_player(seat)
         return runtime

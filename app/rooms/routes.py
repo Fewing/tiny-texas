@@ -10,6 +10,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.dependencies import load_auth_context, require_csrf
+from app.bots import list_bot_strategy_options
 from app.db import get_db
 from app.db.models import Room, RoomPlayer
 from app.game.runtime import GameError
@@ -84,6 +85,8 @@ async def room_detail(request: Request, code: str, db: DbSession = Depends(get_d
             "room": room,
             "room_player": room_player,
             "initial_state": runtime.public_state(auth.user.id),
+            "bot_strategy_options": list_bot_strategy_options(),
+            "viewer_is_owner": room.creator_id == auth.user.id,
             "error": request.query_params.get("error"),
         },
     )

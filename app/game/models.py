@@ -21,4 +21,5 @@ class BotObservation:
     current_bet: int
     legal_actions: list[dict]
     action_history: list[dict]
+    opponent_count: int = 1
 

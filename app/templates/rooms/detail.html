@@ -6,6 +6,7 @@
   class="room-shell"
   data-room-code="{{ room.code }}"
   data-current-user-id="{{ current_user.id }}"
+  data-is-owner="{{ 'true' if viewer_is_owner else 'false' }}"
 >
   <div class="room-heading">
     <div>
@@ -69,7 +70,34 @@
       <div id="result-modal-body" class="result-dialog-body"></div>
     </div>
   </div>
+  <div id="bot-modal" class="result-modal" hidden>
+    <div class="result-dialog bot-dialog" role="dialog" aria-modal="true" aria-labelledby="bot-modal-title">
+      <div class="result-dialog-heading">
+        <div>
+          <p class="eyebrow">机器人</p>
+          <h2 id="bot-modal-title">添加机器人</h2>
+        </div>
+        <button id="bot-modal-close" class="ghost-button" type="button">关闭</button>
+      </div>
+      <form id="bot-form" class="bot-form">
+        <label>
+          策略
+          <select id="bot-strategy-select" name="strategy"></select>
+        </label>
+        <label>
+          变体
+          <select id="bot-variant-select" name="variant"></select>
+        </label>
+        <div id="bot-variant-description" class="muted"></div>
+        <div class="button-row">
+          <button class="button primary" type="submit">添加</button>
+          <button id="bot-form-cancel" class="button secondary" type="button">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}?v=20260703-7" defer></script>
+<script id="bot-options" type="application/json">{{ bot_strategy_options | tojson }}</script>
+<script src="{{ url_for('static', path='/js/room.js') }}?v=20260706-1" defer></script>
 {% endblock %}

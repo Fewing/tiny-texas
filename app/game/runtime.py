@@ -8,6 +8,7 @@ from math import ceil
 
 from app.game.cards import shuffled_deck
 from app.game.evaluator import describe, evaluate
+from app.game.models import BotObservation
 
 WAITING = "waiting"
 PREFLOP = "preflop"
@@ -48,6 +49,8 @@ class PlayerRuntime:
     username: str
     seat_index: int
     player_type: str = "human"
+    bot_strategy: str | None = None
+    bot_variant: str | None = None
     stack: int = 0
     ready: bool = False
     connected: bool = False
@@ -172,6 +175,7 @@ class RoomRuntime:
     phrase_sent_at: dict[int, datetime] = field(default_factory=dict)
     last_result: HandResult | None = None
     hand_started_at: datetime | None = None
+    next_bot_user_id: int = -1
 
     @property
     def code(self) -> str:
@@ -181,7 +185,15 @@ class RoomRuntime:
     def pot(self) -> int:
         return sum(player.total_bet for player in self.players.values())
 
-    def seat_player(self, user_id: int, username: str, seat_index: int, player_type: str = "human") -> None:
+    def seat_player(
+        self,
+        user_id: int,
+        username: str,
+        seat_index: int,
+        player_type: str = "human",
+        bot_strategy: str | None = None,
+        bot_variant: str | None = None,
+    ) -> None:
         if self.phase != WAITING:
             raise GameError("只能在两手牌之间入座。")
         if seat_index < 0 or seat_index >= self.config.seat_count:
@@ -209,11 +221,36 @@ class RoomRuntime:
             username=username,
             seat_index=seat_index,
             player_type=player_type,
+            bot_strategy=bot_strategy,
+            bot_variant=bot_variant,
             stack=stack,
             ready=ready,
         )
 
-    def sync_seated_player(self, user_id: int, username: str, seat_index: int, player_type: str = "human") -> None:
+    def add_bot(self, username: str, seat_index: int, bot_strategy: str, bot_variant: str) -> PlayerRuntime:
+        while any(player.user_id == self.next_bot_user_id for player in self.players.values()):
+            self.next_bot_user_id -= 1
+        user_id = self.next_bot_user_id
+        self.next_bot_user_id -= 1
+        self.seat_player(
+            user_id,
+            username,
+            seat_index,
+            player_type="bot",
+            bot_strategy=bot_strategy,
+            bot_variant=bot_variant,
+        )
+        return self.players[seat_index]
+
+    def sync_seated_player(
+        self,
+        user_id: int,
+        username: str,
+        seat_index: int,
+        player_type: str = "human",
+        bot_strategy: str | None = None,
+        bot_variant: str | None = None,
+    ) -> None:
         if seat_index < 0 or seat_index >= self.config.seat_count:
             return
         existing = self.players.get(seat_index)
@@ -223,11 +260,15 @@ class RoomRuntime:
                 username=username,
                 seat_index=seat_index,
                 player_type=player_type,
+                bot_strategy=bot_strategy,
+                bot_variant=bot_variant,
                 stack=self.player_stacks.get(user_id, self.config.buy_in),
             )
         elif existing.user_id == user_id:
             existing.username = username
             existing.player_type = player_type
+            existing.bot_strategy = bot_strategy
+            existing.bot_variant = bot_variant
             self._remember_player_stack(existing)
 
     def stand_player(self, user_id: int) -> None:
@@ -457,6 +498,8 @@ class RoomRuntime:
                     "user_id": player.user_id,
                     "username": player.username,
                     "player_type": player.player_type,
+                    "bot_strategy": player.bot_strategy,
+                    "bot_variant": player.bot_variant,
                     "stack": player.stack,
                     "rebuy_count": self.rebuy_counts.get(player.user_id, 0),
                     "ready": player.ready,
@@ -497,6 +540,34 @@ class RoomRuntime:
             "phrase_cooldown_seconds": QUICK_PHRASE_COOLDOWN_SECONDS,
             "viewer_user_id": viewer_user_id,
         }
+
+    def bot_observation_for_user(self, user_id: int) -> BotObservation:
+        player = self._player_for_user(user_id)
+        if player is None:
+            raise GameError("机器人不在牌桌中。")
+        if self.phase not in BETTING_PHASES or player.seat_index != self.current_turn_seat:
+            raise GameError("当前没有轮到机器人行动。")
+        legal_actions = self.legal_actions_for_user(user_id)
+        opponent_count = len(
+            [
+                opponent
+                for opponent in self.players.values()
+                if opponent.in_hand and not opponent.folded and opponent.user_id != user_id
+            ]
+        )
+        return BotObservation(
+            room_code=self.config.code,
+            hand_number=self.hand_number,
+            seat_index=player.seat_index,
+            hole_cards=list(player.hole_cards),
+            community_cards=list(self.community_cards),
+            pot=self.pot,
+            stack=player.stack,
+            current_bet=player.current_bet,
+            legal_actions=legal_actions,
+            action_history=[event.to_public() for event in self.actions[-20:]],
+            opponent_count=max(1, opponent_count),
+        )
 
     def can_start_hand(self, viewer_user_id: int | None = None) -> bool:
         active_seats = [seat for seat, player in self.players.items() if player.stack > 0]

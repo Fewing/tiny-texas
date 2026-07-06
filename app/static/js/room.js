@@ -3,7 +3,9 @@ const app = document.querySelector("#room-app");
 if (app) {
   const roomCode = app.dataset.roomCode;
   const currentUserId = Number(app.dataset.currentUserId);
+  const isOwner = app.dataset.isOwner === "true";
   const initialState = JSON.parse(document.querySelector("#initial-state").textContent);
+  const botOptions = JSON.parse(document.querySelector("#bot-options")?.textContent || "[]");
   const connectionState = document.querySelector("#connection-state");
   const seatsEl = document.querySelector("#seats");
   const phraseLayerEl = document.querySelector("#phrase-layer");
@@ -15,15 +17,37 @@ if (app) {
   const resultModal = document.querySelector("#result-modal");
   const resultModalBody = document.querySelector("#result-modal-body");
   const resultModalClose = document.querySelector("#result-modal-close");
+  const botModal = document.querySelector("#bot-modal");
+  const botModalClose = document.querySelector("#bot-modal-close");
+  const botForm = document.querySelector("#bot-form");
+  const botFormCancel = document.querySelector("#bot-form-cancel");
+  const botStrategySelect = document.querySelector("#bot-strategy-select");
+  const botVariantSelect = document.querySelector("#bot-variant-select");
+  const botVariantDescription = document.querySelector("#bot-variant-description");
   const logEl = document.querySelector("#action-log");
   let socket = null;
   let state = initialState;
   let shownResultHandNumber = null;
   let roomDeleted = false;
   let phrasePickerOpen = false;
+  let selectedBotSeatIndex = null;
 
   resultModalClose?.addEventListener("click", () => {
     resultModal.hidden = true;
+  });
+  botModalClose?.addEventListener("click", closeBotModal);
+  botFormCancel?.addEventListener("click", closeBotModal);
+  botStrategySelect?.addEventListener("change", renderBotVariantSelect);
+  botVariantSelect?.addEventListener("change", renderBotVariantDescription);
+  botForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!Number.isInteger(selectedBotSeatIndex)) return;
+    send("bot.add", {
+      seat_index: selectedBotSeatIndex,
+      strategy: botStrategySelect.value,
+      variant: botVariantSelect.value,
+    });
+    closeBotModal();
   });
 
   document.addEventListener("click", (event) => {
@@ -178,8 +202,22 @@ if (app) {
       seatNode.style.setProperty("--seat-x", `${position.x}%`);
       seatNode.style.setProperty("--seat-y", `${position.y}%`);
       if (!seat.occupied) {
-        seatNode.innerHTML = `<div>${seat.seat_index + 1} 号座位</div><button class="button secondary" type="button">入座</button>`;
-        seatNode.querySelector("button").addEventListener("click", () => send("seat.take", { seat_index: seat.seat_index }));
+        seatNode.innerHTML = `<div>${seat.seat_index + 1} 号座位</div><div class="seat-actions"></div>`;
+        const actions = seatNode.querySelector(".seat-actions");
+        const takeSeat = document.createElement("button");
+        takeSeat.className = "button secondary";
+        takeSeat.type = "button";
+        takeSeat.textContent = "入座";
+        takeSeat.addEventListener("click", () => send("seat.take", { seat_index: seat.seat_index }));
+        actions.appendChild(takeSeat);
+        if (isOwner && botOptions.length) {
+          const addBot = document.createElement("button");
+          addBot.className = "button secondary";
+          addBot.type = "button";
+          addBot.textContent = "添加机器人";
+          addBot.addEventListener("click", () => openBotModal(seat.seat_index));
+          actions.appendChild(addBot);
+        }
         seatsEl.appendChild(seatNode);
         continue;
       }
@@ -189,6 +227,7 @@ if (app) {
       if (smallBlindSeat === seat.seat_index) roleBadges.push({ label: "小", className: "small-blind-badge" });
       if (bigBlindSeat === seat.seat_index) roleBadges.push({ label: "大", className: "big-blind-badge" });
       const badges = [];
+      if (seat.player_type === "bot") badges.push("BOT");
       if (state.phase === "waiting" && seat.ready) badges.push("已准备");
       if (seat.all_in) badges.push("全下");
       if (state.phase !== "waiting" && !seat.in_hand) badges.push("本手未参与");
@@ -225,8 +264,68 @@ if (app) {
           renderPhrasePicker(seatNode, position);
         }
       }
+      if (isOwner && seat.player_type === "bot" && state.phase === "waiting") {
+        const actions = document.createElement("div");
+        actions.className = "seat-actions";
+        const removeBot = document.createElement("button");
+        removeBot.className = "button danger";
+        removeBot.type = "button";
+        removeBot.textContent = "删除机器人";
+        removeBot.addEventListener("click", (event) => {
+          event.stopPropagation();
+          send("bot.remove", { seat_index: seat.seat_index });
+        });
+        actions.appendChild(removeBot);
+        seatNode.appendChild(actions);
+      }
       seatsEl.appendChild(seatNode);
     }
+  }
+
+  function openBotModal(seatIndex) {
+    if (!botModal || !botStrategySelect || !botVariantSelect) return;
+    selectedBotSeatIndex = seatIndex;
+    renderBotStrategySelect();
+    botModal.hidden = false;
+  }
+
+  function closeBotModal() {
+    selectedBotSeatIndex = null;
+    if (botModal) {
+      botModal.hidden = true;
+    }
+  }
+
+  function renderBotStrategySelect() {
+    botStrategySelect.innerHTML = "";
+    for (const option of botOptions) {
+      const item = document.createElement("option");
+      item.value = option.name;
+      item.textContent = option.label || option.name;
+      botStrategySelect.appendChild(item);
+    }
+    renderBotVariantSelect();
+  }
+
+  function renderBotVariantSelect() {
+    const strategy = botOptions.find((option) => option.name === botStrategySelect.value) || botOptions[0];
+    botVariantSelect.innerHTML = "";
+    for (const variant of strategy?.variants || []) {
+      const item = document.createElement("option");
+      item.value = variant.name;
+      item.textContent = variant.label || variant.name;
+      botVariantSelect.appendChild(item);
+    }
+    if (strategy?.default_variant) {
+      botVariantSelect.value = strategy.default_variant;
+    }
+    renderBotVariantDescription();
+  }
+
+  function renderBotVariantDescription() {
+    const strategy = botOptions.find((option) => option.name === botStrategySelect.value) || botOptions[0];
+    const variant = strategy?.variants?.find((option) => option.name === botVariantSelect.value);
+    botVariantDescription.textContent = variant?.description || strategy?.description || "";
   }
 
   function canSendPhraseFromSeat(seat) {

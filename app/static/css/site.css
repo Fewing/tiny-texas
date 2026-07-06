@@ -31,7 +31,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -219,7 +220,8 @@ label {
   font-size: 0.9rem;
 }
 
-input {
+input,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -695,6 +697,13 @@ input {
   font-size: 0.8rem;
 }
 
+.seat-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .badge {
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.28);
@@ -825,6 +834,16 @@ input {
   display: grid;
   gap: 18px;
   padding-top: 18px;
+}
+
+.bot-form {
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+}
+
+.bot-dialog {
+  width: min(460px, 100%);
 }
 
 .result-dialog-body h3 {
