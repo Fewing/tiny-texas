@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import random
+import secrets
 
 RANKS = "23456789TJQKA"
 SUITS = "cdhs"
+
+_SECURE_RANDOM = secrets.SystemRandom()
 
 
 def new_deck() -> list[str]:
@@ -12,6 +14,6 @@ def new_deck() -> list[str]:
 
 def shuffled_deck() -> list[str]:
     deck = new_deck()
-    random.shuffle(deck)
+    _SECURE_RANDOM.shuffle(deck)
     return deck
 
