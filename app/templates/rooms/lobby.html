@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 {% block title %}大厅 - Tiny Texas{% endblock %}
 {% block content %}
-<section class="lobby-grid">
-  <div class="create-room">
+<section class="lobby">
+  <header class="lobby-heading">
     <h1>大厅</h1>
     <p class="page-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
+  </header>
+  <div class="lobby-grid">
+  <div class="create-room">
+    <h2>创建牌桌</h2>
     <form method="post" action="/rooms" class="room-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label>
@@ -42,10 +46,10 @@
           <article class="room-row">
             <div>
               <strong>{{ room.name }}</strong>
-              <span>{{ room.code }} / {{ room.seat_count }} 个座位 / 盲注 {{ room.small_blind }}-{{ room.big_blind }}</span>
+              <span>{{ room.code }} · {{ room.seat_count }} 座 · 盲注 {{ room.small_blind }} / {{ room.big_blind }}</span>
             </div>
             <div class="room-actions">
-              <a class="button secondary" href="/rooms/{{ room.code }}">进入</a>
+              <a class="button secondary" href="/rooms/{{ room.code }}">进入牌桌</a>
               {% if room.creator_id == current_user.id %}
                 <form method="post" action="/rooms/{{ room.code }}/delete" onsubmit="return confirm('确定删除这个房间吗？');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -57,8 +61,9 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="muted">还没有房间。</p>
+      <p class="empty-rooms">还没有牌桌，可以创建一桌邀请朋友。</p>
     {% endif %}
+  </div>
   </div>
 </section>
 {% endblock %}

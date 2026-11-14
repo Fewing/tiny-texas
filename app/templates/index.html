@@ -2,15 +2,18 @@
 {% block title %}Tiny Texas{% endblock %}
 {% block content %}
 <section class="welcome">
-  <div>
-    <p class="eyebrow">轻量在线扑克</p>
-    <h1>Tiny Texas</h1>
+  <div class="welcome-copy">
+    <h1>德州扑克</h1>
     <p class="slogan">我们不生产米，我们只是慈善家的搬运工。</p>
-    <p class="lead">创建私人现金桌，用房间码邀请朋友，直接在浏览器里玩德州扑克。</p>
+    <p class="lead">创建牌桌，发链接邀请朋友，进浏览器就能开局。</p>
     <div class="button-row">
       <a class="button primary" href="/register">创建账号</a>
       <a class="button secondary" href="/login">登录</a>
     </div>
+  </div>
+  <div class="welcome-art" aria-hidden="true">
+    <div class="welcome-card"><b>A</b><span>♠</span></div>
+    <div class="welcome-card"><b>K</b><span>♥</span></div>
   </div>
 </section>
 {% endblock %}

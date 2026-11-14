@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ room.name }} - Tiny Texas{% endblock %}
+{% block page_class %}game-page{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/room.css') }}?v=20261115-6">
+{% endblock %}
+{% block toolbar %}
+<div class="game-tools">
+  <a class="ghost-button demo-link" href="{{ url_for('static', path='/effects-demo.html') }}" target="_blank" rel="noopener">特效演示</a>
+  <button id="sound-toggle" class="ghost-button" type="button" aria-pressed="true">音效</button>
+  <button id="motion-toggle" class="ghost-button" type="button" aria-pressed="false">减少动效</button>
+</div>
+{% endblock %}
 {% block content %}
 <section
   id="room-app"
@@ -10,15 +21,14 @@
 >
   <div class="room-heading">
     <div>
-      <p class="eyebrow">房间 {{ room.code }}</p>
       <div class="room-title-line">
         <h1>{{ room.name }}</h1>
-        <span id="connection-state" class="connection-pill">正在连接...</span>
+        <span id="connection-state" class="connection-pill" role="status">正在连接</span>
       </div>
-      <p class="page-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
-      <p class="muted">{{ room.seat_count }} 个座位 / 盲注 {{ room.small_blind }}-{{ room.big_blind }} / 买入 {{ room.buy_in }}</p>
+      <p class="table-details">房间 <b>{{ room.code }}</b> <span>·</span> {{ room.seat_count }} 座 <span>·</span> 盲注 {{ room.small_blind }} / {{ room.big_blind }} <span>·</span> 买入 {{ room.buy_in }}</p>
     </div>
     <div class="room-heading-actions">
+      <button id="copy-invite" class="ghost-button" type="button">复制邀请链接</button>
       {% if room.creator_id == current_user.id %}
         <form method="post" action="/rooms/{{ room.code }}/delete" onsubmit="return confirm('确定删除这个房间吗？');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -28,53 +38,62 @@
     </div>
   </div>
 
+  <p class="room-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
   {% if error %}<p class="alert">{{ error }}</p>{% endif %}
 
-  <div class="table-layout">
-    <div class="table-surface">
-      <div class="board">
-        <div class="community-area">
-          <span class="label">公共牌</span>
-          <div id="community-cards" class="card-row"></div>
-        </div>
-        <div class="pot-box">
-          <span class="label">底池</span>
-          <strong id="pot-value">0</strong>
-        </div>
-        <div class="player-hand-area">
-          <span class="label">我的手牌</span>
-          <div id="player-hole-cards" class="card-row"></div>
-        </div>
+  <div id="table-surface" class="table-surface">
+    <div class="table-art" aria-hidden="true"></div>
+    <div class="table-flash" aria-hidden="true"></div>
+    <div class="board">
+      <div id="street-label" class="street-label"></div>
+      <div id="pot-box" class="pot-box">
+        <div class="pot-label"><i aria-hidden="true"></i><span id="pot-label">底池</span></div>
+        <strong id="pot-value">0</strong>
       </div>
-      <div id="seats" class="seat-grid"></div>
-      <div id="phrase-layer" class="phrase-layer" aria-live="polite"></div>
+      <section id="settlement" class="settlement" aria-label="本手结算" hidden>
+        <p id="settlement-caption" class="settlement-caption"></p>
+        <h2 id="settlement-title" aria-live="polite"></h2>
+        <div id="settlement-awards" class="settlement-awards"></div>
+      </section>
+      <div id="community-cards" class="card-row" aria-label="公共牌"></div>
     </div>
-    <aside class="table-panel">
-      <div id="action-controls" class="action-controls"></div>
-      <div id="result-box" class="result-box"></div>
-      <div>
-        <h2>最近动作</h2>
-        <ol id="action-log" class="action-log"></ol>
-      </div>
-    </aside>
+    <div id="seats" class="seat-grid"></div>
+    <div id="player-hole-cards" class="player-hand-area" aria-label="我的手牌"></div>
+    <div id="phrase-layer" class="phrase-layer" aria-live="polite"></div>
+    <div id="effects-layer" class="effects-layer" aria-hidden="true"></div>
   </div>
-  <div id="result-modal" class="result-modal" hidden>
-    <div class="result-dialog" role="dialog" aria-modal="true" aria-labelledby="result-title">
+
+  <div class="action-dock">
+    <p id="room-feedback" class="room-feedback" role="alert" hidden></p>
+    <div id="settlement-tools" class="settlement-tools" hidden>
+      <button id="settlement-skip" class="ghost-button" type="button" hidden>跳过动画</button>
+      <button id="settlement-details" class="ghost-button" type="button" hidden>结算详情</button>
+    </div>
+    <div id="action-controls" class="action-controls"></div>
+  </div>
+  <div class="room-history">
+    <section id="result-box" class="result-box" aria-label="上一手结算" hidden></section>
+    <details class="action-history">
+      <summary>最近动作</summary>
+      <ol id="action-log" class="action-log"></ol>
+    </details>
+  </div>
+
+  <dialog id="result-modal" class="result-modal" aria-labelledby="result-title">
+    <div class="result-dialog">
       <div class="result-dialog-heading">
         <div>
-          <p class="eyebrow">本手结算</p>
-          <h2 id="result-title">谁在收米</h2>
+          <h2 id="result-title">手牌结算</h2>
         </div>
         <button id="result-modal-close" class="ghost-button" type="button">关闭</button>
       </div>
       <div id="result-modal-body" class="result-dialog-body"></div>
     </div>
-  </div>
-  <div id="bot-modal" class="result-modal" hidden>
-    <div class="result-dialog bot-dialog" role="dialog" aria-modal="true" aria-labelledby="bot-modal-title">
+  </dialog>
+  <dialog id="bot-modal" class="result-modal" aria-labelledby="bot-modal-title">
+    <div class="result-dialog">
       <div class="result-dialog-heading">
         <div>
-          <p class="eyebrow">机器人</p>
           <h2 id="bot-modal-title">添加机器人</h2>
         </div>
         <button id="bot-modal-close" class="ghost-button" type="button">关闭</button>
@@ -95,9 +114,9 @@
         </div>
       </form>
     </div>
-  </div>
+  </dialog>
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
 <script id="bot-options" type="application/json">{{ bot_strategy_options | tojson }}</script>
-<script src="{{ url_for('static', path='/js/room.js') }}?v=20260706-1" defer></script>
+<script type="module" src="{{ url_for('static', path='/js/room.js') }}?v=20261115-6"></script>
 {% endblock %}

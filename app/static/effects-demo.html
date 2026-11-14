@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e18">
+  <title>特效演示 - Tiny Texas</title>
+  <link rel="stylesheet" href="./css/site.css?v=20261114-1">
+  <link rel="stylesheet" href="./css/room.css?v=20261115-6">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span aria-hidden="true">♠</span> Tiny Texas</a>
+    <div class="game-tools">
+      <button id="sound-toggle" class="ghost-button" type="button" aria-pressed="true">音效</button>
+      <button id="motion-toggle" class="ghost-button" type="button" aria-pressed="false">减少动效</button>
+    </div>
+  </header>
+  <main class="page game-page">
+    <section id="room-app" class="room-shell" data-current-user-id="1" data-demo>
+      <div class="room-heading">
+        <div class="room-title-line"><h1>特效演示</h1></div>
+        <div class="demo-controls">
+          <label>片段 <select id="demo-clip"></select></label>
+          <button id="demo-play" class="button secondary" type="button">播放</button>
+          <button id="demo-play-all" class="button primary" type="button">连续播放</button>
+        </div>
+      </div>
+      <p id="demo-status" class="table-details" role="status"></p>
+      <div id="table-surface" class="table-surface">
+        <div class="table-art" aria-hidden="true"></div>
+        <div class="table-flash" aria-hidden="true"></div>
+        <div class="board">
+          <div id="street-label" class="street-label"></div>
+          <div id="pot-box" class="pot-box">
+            <div class="pot-label"><i aria-hidden="true"></i><span>底池</span></div>
+            <strong id="pot-value">0</strong>
+          </div>
+          <section id="settlement" class="settlement" aria-label="本手结算" hidden>
+            <p id="settlement-caption" class="settlement-caption"></p>
+            <h2 id="settlement-title" aria-live="polite"></h2>
+            <div id="settlement-awards" class="settlement-awards"></div>
+          </section>
+          <div id="community-cards" class="card-row" aria-label="公共牌"></div>
+        </div>
+        <div id="seats" class="seat-grid"></div>
+        <div id="player-hole-cards" class="player-hand-area" aria-label="我的手牌"></div>
+        <div id="phrase-layer" class="phrase-layer" aria-live="polite"></div>
+        <div id="effects-layer" class="effects-layer" aria-hidden="true"></div>
+      </div>
+      <div id="settlement-tools" class="demo-settlement-tools" hidden>
+        <button id="settlement-skip" class="ghost-button" type="button" hidden>跳过动画</button>
+        <button id="settlement-details" class="ghost-button" type="button" hidden>结算详情</button>
+      </div>
+      <section id="result-box" class="result-box" hidden></section>
+      <dialog id="result-modal" class="result-modal" aria-labelledby="result-title">
+        <div class="result-dialog">
+          <div class="result-dialog-heading">
+            <h2 id="result-title">手牌结算</h2>
+            <button id="result-modal-close" class="ghost-button" type="button">关闭</button>
+          </div>
+          <div id="result-modal-body" class="result-dialog-body"></div>
+        </div>
+      </dialog>
+    </section>
+  </main>
+  <script type="module" src="./js/room.js?v=20261115-6"></script>
+</body>
+</html>
