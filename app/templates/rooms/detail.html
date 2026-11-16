@@ -2,7 +2,7 @@
 {% block title %}{{ room.name }} - Tiny Texas{% endblock %}
 {% block page_class %}game-page{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='/css/room.css') }}?v=20261116-3">
+<link rel="stylesheet" href="{{ url_for('static', path='/css/room.css') }}?v=20261116-4">
 {% endblock %}
 {% block toolbar %}
 <div class="game-tools">
@@ -118,5 +118,5 @@
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
 <script id="bot-options" type="application/json">{{ bot_strategy_options | tojson }}</script>
-<script type="module" src="{{ url_for('static', path='/js/room.js') }}?v=20261116-3"></script>
+<script type="module" src="{{ url_for('static', path='/js/room.js') }}?v=20261116-4"></script>
 {% endblock %}
