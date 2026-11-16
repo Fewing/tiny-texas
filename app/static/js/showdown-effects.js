@@ -39,13 +39,14 @@ export function showHandEffect(layer, banner, effect) {
   if (!Object.keys(shapes).length) return;
   const frame = layer.getBoundingClientRect();
   const title = banner.getBoundingClientRect();
+  const scale = frame.width / layer.clientWidth || 1;
   const stage = document.createElement("div");
   stage.className = "showdown-effect";
   stage.dataset.effect = effect;
-  stage.style.left = `${title.left + title.width / 2 - frame.left}px`;
-  stage.style.top = `${title.top + title.height / 2 - frame.top}px`;
-  stage.style.width = `${title.width}px`;
-  stage.style.height = `${title.height}px`;
+  stage.style.left = `${(title.left + title.width / 2 - frame.left) / scale}px`;
+  stage.style.top = `${(title.top + title.height / 2 - frame.top) / scale}px`;
+  stage.style.width = `${title.width / scale}px`;
+  stage.style.height = `${title.height / scale}px`;
   stage.style.setProperty("--accent", color);
   stage.style.animationDuration = `${hold}ms`;
   for (const [kind, count] of Object.entries(shapes)) {

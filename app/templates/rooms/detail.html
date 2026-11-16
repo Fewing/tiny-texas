@@ -2,7 +2,7 @@
 {% block title %}{{ room.name }} - Tiny Texas{% endblock %}
 {% block page_class %}game-page{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='/css/room.css') }}?v=20261116-4">
+<link rel="stylesheet" href="{{ url_for('static', path='/css/room.css') }}?v=20261116-5">
 {% endblock %}
 {% block toolbar %}
 <div class="game-tools">
@@ -41,6 +41,7 @@
   <p class="room-slogan">我们不生产米，我们只是慈善家的搬运工。</p>
   {% if error %}<p class="alert">{{ error }}</p>{% endif %}
 
+  <div class="table-viewport">
   <div id="table-surface" class="table-surface">
     <div class="table-art" aria-hidden="true"></div>
     <div class="table-flash" aria-hidden="true"></div>
@@ -63,7 +64,9 @@
     <div id="effects-layer" class="effects-layer" aria-hidden="true"></div>
   </div>
 
+  </div>
   <div class="action-dock">
+    <button id="history-open" class="ghost-button" type="button">牌局记录</button>
     <p id="room-feedback" class="room-feedback" role="alert" hidden></p>
     <div id="settlement-tools" class="settlement-tools" hidden>
       <button id="settlement-skip" class="ghost-button" type="button" hidden>跳过动画</button>
@@ -71,13 +74,18 @@
     </div>
     <div id="action-controls" class="action-controls"></div>
   </div>
+  <dialog id="history-modal" class="result-modal" aria-label="牌局记录">
+  <div class="result-dialog">
+    <div class="result-dialog-heading"><h2>牌局记录</h2><button id="history-close" class="ghost-button" type="button">关闭</button></div>
   <div class="room-history">
     <section id="result-box" class="result-box" aria-label="上一手结算" hidden></section>
-    <details class="action-history">
+    <details class="action-history" open>
       <summary>最近动作</summary>
       <ol id="action-log" class="action-log"></ol>
     </details>
   </div>
+  </div>
+  </dialog>
 
   <dialog id="result-modal" class="result-modal" aria-labelledby="result-title">
     <div class="result-dialog">
@@ -118,5 +126,5 @@
 </section>
 <script id="initial-state" type="application/json">{{ initial_state | tojson }}</script>
 <script id="bot-options" type="application/json">{{ bot_strategy_options | tojson }}</script>
-<script type="module" src="{{ url_for('static', path='/js/room.js') }}?v=20261116-4"></script>
+<script type="module" src="{{ url_for('static', path='/js/room.js') }}?v=20261116-5"></script>
 {% endblock %}

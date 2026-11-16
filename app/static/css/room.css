@@ -705,3 +705,47 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
   animation: none !important;
   transition: none !important;
 }
+/* The live room is a viewport-sized game screen; only dialogs scroll. */
+html:has(.table-viewport) { height: 100%; overflow: hidden; }
+body:has(.table-viewport) { height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.game-page:has(.table-viewport) { min-height: 0; width: min(1420px, calc(100% - 16px)); padding: 6px 0 max(6px, env(safe-area-inset-bottom)); }
+.room-shell:has(.table-viewport) { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) 136px; gap: 4px; }
+.room-shell:has(.table-viewport) > .room-slogan { display: none; }
+.room-shell:has(.table-viewport) > .alert { position: absolute; top: 75px; left: 15%; right: 15%; z-index: 10; }
+.table-viewport { position: relative; min-width: 0; min-height: 0; overflow: clip; }
+.table-viewport .table-surface { position: absolute; left: 50%; top: 50%; margin: 0; min-height: 0; transform-origin: center; }
+.table-viewport .board, .table-viewport .board:has(.settlement:not([hidden])) { top: 29%; height: 230px; display: block; }
+.table-viewport #community-cards { position: absolute; top: 112px; width: 100%; --card-width: 82px; }
+.table-viewport .board:has(.settlement:not([hidden])) #community-cards { --card-width: 82px; }
+.table-viewport .street-label { position: absolute; top: 0; width: 100%; text-align: center; }
+.table-viewport .pot-box { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); }
+.table-viewport .settlement { position: absolute; top: 0; left: 50%; transform: translateX(-50%); min-height: 0; height: 98px; }
+.table-viewport .settlement h2 { font-size: 2.2rem; }
+.table-viewport .settlement-amount { font-size: 1.65rem; }
+.table-viewport .own-cards, .table-viewport .table-surface:has(.settlement:not([hidden])) .own-cards { --card-width: 72px; }
+.room-shell:has(.table-viewport) .action-dock { position: relative; bottom: auto; min-height: 0; padding: 38px 10px 8px; }
+#history-open { position: absolute; right: 10px; top: 5px; min-height: 27px; padding: 2px 8px; font-size: .72rem; }
+.room-shell:has(.table-viewport) .settlement-tools { position: absolute; left: 10px; top: 5px; float: none; }
+.room-shell:has(.table-viewport) .settlement-tools button { min-height: 27px; padding-block: 2px; }
+.room-shell:has(.table-viewport) .room-feedback { position: absolute; bottom: 100%; left: 0; right: 0; margin: 0; }
+.room-shell:has(.table-viewport) .result-modal { overflow: auto; overscroll-behavior: contain; max-height: 85dvh; }
+@media (max-width: 800px) {
+  .room-shell:has(.table-viewport) { grid-template-rows: auto minmax(0, 1fr) 184px; }
+  .room-shell:has(.table-viewport) .action-controls { gap: 5px; }
+  .room-shell:has(.table-viewport) .raise-editor { padding-top: 5px; }
+}
+@media (max-width: 690px) {
+  body:has(.table-viewport) .topbar { flex-wrap: nowrap; gap: 5px; }
+  body:has(.table-viewport) .brand { font-size: .78rem; letter-spacing: 0; gap: 3px; }
+  body:has(.table-viewport) .user-pill { display: none; }
+  .table-viewport .board, .table-viewport .board:has(.settlement:not([hidden])) { top: 46%; height: 140px; }
+  .table-viewport #community-cards, .table-viewport .board:has(.settlement:not([hidden])) #community-cards { top: 62px; --card-width: 46px; }
+  .table-viewport .settlement { height: 52px; }
+  .table-viewport .settlement h2 { font-size: 1.2rem; }
+  .table-viewport .settlement-amount { font-size: 1.1rem; }
+  .table-viewport .pot-box { top: 14px; }
+  .table-viewport .pot-box strong { font-size: 1.4rem; }
+  .table-viewport .own-cards, .table-viewport .table-surface:has(.settlement:not([hidden])) .own-cards { --card-width: 48px; }
+  .room-shell:has(.table-viewport) .action-row { gap: 3px; }
+  .room-shell:has(.table-viewport) .action-row .button { padding-inline: 5px; min-width: 40px; font-size: .75rem; }
+}

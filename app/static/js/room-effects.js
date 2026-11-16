@@ -1,4 +1,4 @@
-import { showHandEffect, showdownProfile } from "./showdown-effects.js?v=20261115-2";
+import { showHandEffect, showdownProfile } from "./showdown-effects.js?v=20261116-5";
 
 const tones = {
   select: [[640, 480, 0.045, 0.026, 0]],
@@ -160,7 +160,8 @@ export function createRoomEffects(app) {
   function center(node) {
     const bounds = node.getBoundingClientRect();
     const frame = layer.getBoundingClientRect();
-    return { x: bounds.left + bounds.width / 2 - frame.left, y: bounds.top + bounds.height / 2 - frame.top };
+    const scale = frame.width / layer.clientWidth || 1;
+    return { x: (bounds.left + bounds.width / 2 - frame.left) / scale, y: (bounds.top + bounds.height / 2 - frame.top) / scale };
   }
 
   function chips(seat, amount, award = false, heavy = false, effect = "fold") {

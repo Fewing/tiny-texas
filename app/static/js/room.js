@@ -1,9 +1,11 @@
-import { createRoomEffects } from "./room-effects.js?v=20261115-6";
+import { createRoomEffects } from "./room-effects.js?v=20261116-5";
+import { setupRoomLayout } from "./room-layout.js?v=20261116-5";
 import { raisePresets } from "./raise-presets.js?v=20261114-1";
 import { showdownHand } from "./showdown.js?v=20261115-6";
-import { showdownProfile, showdownRhythm } from "./showdown-effects.js?v=20261115-2";
+import { showdownProfile, showdownRhythm } from "./showdown-effects.js?v=20261116-5";
 
 const app = document.querySelector("#room-app");
+setupRoomLayout(app);
 const { roomCode } = app.dataset;
 const isDemo = app.hasAttribute("data-demo");
 const currentUserId = Number(app.dataset.currentUserId);
