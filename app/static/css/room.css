@@ -30,7 +30,7 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
   isolation: isolate;
   container-type: size;
   height: clamp(405px, calc(100svh - 270px), 770px);
-  margin-top: -6px;
+  margin-top: 44px;
 }
 .table-art, .table-flash, .seat-grid, .effects-layer, .phrase-layer { position: absolute; inset: 0; pointer-events: none; }
 .table-art {
@@ -158,7 +158,6 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
 .seat-cards .card:first-child { rotate: -9deg; }
 .seat-cards .card:last-child { rotate: 8deg; }
 /* Public showdown cards stay legible after the reveal animation finishes. */
-.table-surface:has(.settlement:not([hidden])) { margin-top: 44px; }
 .table-surface:has(.settlement:not([hidden])) .seat-cards:has(.card-face) {
   --card-width: clamp(30px, 6.5cqw, 58px);
   top: -8px;
@@ -637,9 +636,9 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
   .table-details { font-size: .69rem; }
   .room-heading-actions { gap: 5px; }
   .room-heading-actions button { min-height: 28px; font-size: .69rem; }
-  .table-surface { height: clamp(340px, calc(100svh - 300px), 530px); margin-top: 0; }
+  .table-surface { height: 640px; min-height: 640px; margin-top: 44px; }
   .table-art { background-size: 102% 103%; }
-  .board { top: 35%; gap: 5px; }
+  .board { top: 46%; gap: 5px; }
   #community-cards { --card-width: clamp(33px, min(12cqw, 11cqh), 57px); }
   .pot-box strong { font-size: 2.05rem; }
   .pot-label, .street-label { font-size: .64rem; }
@@ -663,8 +662,6 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
   .table-surface:has(.settlement:not([hidden])) .own-cards { --card-width: clamp(36px, min(12cqw, 12cqh), 60px); }
   .phrase-trigger { left: calc(100% + 3px); min-height: 26px; padding-inline: 5px; font-size: .64rem; }
   .action-dock { position: sticky; bottom: 0; padding: 8px; }
-  .table-surface:has(.settlement:not([hidden])) { min-height: 640px; }
-  .table-surface:has(.settlement:not([hidden])) .seat { --seat-y: var(--mobile-showdown-y); }
   .table-surface:has(.settlement:not([hidden])) .seat-cards:has(.card-face) { --card-width: clamp(30px, 6.5cqw, 38px); }
   .table-surface:has(.settlement:not([hidden])) .seat:has(.card-face) .remove-bot { margin-bottom: 74px; }
   .board:has(.settlement:not([hidden])) { top: 46%; }
@@ -695,7 +692,6 @@ body:has(.game-page) { background: radial-gradient(ellipse at 50% 27%, #132540, 
   .topbar:has(.game-tools) .nav button, .game-tools .ghost-button { padding-inline: 4px; font-size: .66rem; }
   .game-tools { gap: 4px; }
   .room-slogan { display: none; }
-  .board { top: 33%; }
   .action-row .button { padding-inline: 5px; }
   .raise-adjust .raise-number { width: 64px; }
 }

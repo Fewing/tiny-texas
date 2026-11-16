@@ -369,10 +369,9 @@ function positionSeat(node, seatIndex) {
   node.style.setProperty("--desk-x", `${desktop[0]}%`);
   node.style.setProperty("--desk-y", `${desktop[1]}%`);
   node.style.setProperty("--mobile-x", `${mobile[0]}%`);
-  node.style.setProperty("--mobile-y", `${mobile[1]}%`);
-  // Spread the middle seats away from the top row when public cards are shown.
-  const showdownY = mobile[1] >= 29 && mobile[1] <= 32 ? 38 : mobile[1];
-  node.style.setProperty("--mobile-showdown-y", `${showdownY}%`);
+  // Reserve room for public cards throughout the hand so seats never jump at showdown.
+  const mobileY = mobile[1] >= 29 && mobile[1] <= 32 ? 38 : mobile[1];
+  node.style.setProperty("--mobile-y", `${mobileY}%`);
 }
 
 function renderSeats(result = currentResult(), previous = null) {
