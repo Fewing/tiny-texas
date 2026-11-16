@@ -370,6 +370,9 @@ function positionSeat(node, seatIndex) {
   node.style.setProperty("--desk-y", `${desktop[1]}%`);
   node.style.setProperty("--mobile-x", `${mobile[0]}%`);
   node.style.setProperty("--mobile-y", `${mobile[1]}%`);
+  // Spread the middle seats away from the top row when public cards are shown.
+  const showdownY = mobile[1] >= 29 && mobile[1] <= 32 ? 38 : mobile[1];
+  node.style.setProperty("--mobile-showdown-y", `${showdownY}%`);
 }
 
 function renderSeats(result = currentResult(), previous = null) {
