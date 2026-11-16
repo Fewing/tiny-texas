@@ -18,7 +18,7 @@ with sync_playwright() as p:
   page.evaluate(layout+';setupRoomLayout(document.querySelector("#room-app"));')
   page.evaluate('''() => {
    const mobile=innerWidth<=690;
-   const pos=mobile?[[50,88],[19,78],[17,38],[13,13],[38,13],[62,13],[87,13],[83,38],[81,78]]:[[50,86],[18,73],[10,43],[16,18],[39,15],[61,15],[84,18],[90,43],[82,73]];
+   const pos=mobile?[[50,88],[19,82],[17,38],[13,13],[38,13],[62,13],[87,13],[83,38],[81,82]]:[[50,86],[18,73],[10,43],[16,18],[39,15],[61,15],[84,18],[90,43],[82,73]];
    const card='<span class="card card-face"><span class="card-corner">A<span>♠</span></span><span class="card-pip">♠</span></span>';
    document.querySelector('#seats').innerHTML=pos.map(([x,y],i)=>`<article class="seat ${i===0?'self-seat':''}" style="--desk-x:${x}%;--desk-y:${y}%;--mobile-x:${x}%;--mobile-y:${y}%">${i?`<div class="seat-cards card-row">${card.repeat(2)}</div>`:''}<div class="seat-plate"><div class="seat-name">测试玩家${i}</div><div class="seat-stack">1,000</div></div><div class="seat-tags"><span class="seat-tag">两对 +50</span></div></article>`).join('');
    document.querySelector('#community-cards').innerHTML=card.repeat(5);

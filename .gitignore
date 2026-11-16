@@ -22,3 +22,5 @@ htmlcov/
 # Local runtime data
 data/
 
+# Local browser layout checks (screenshots and test databases)
+.layout-check/

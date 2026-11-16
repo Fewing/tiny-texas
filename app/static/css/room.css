@@ -734,6 +734,7 @@ body:has(.table-viewport) { height: 100dvh; min-height: 0; overflow: hidden; dis
   .room-shell:has(.table-viewport) .action-controls { gap: 5px; }
   .room-shell:has(.table-viewport) .raise-editor { padding-top: 5px; }
 }
+.mobile-room-tools { display: none; }
 @media (max-width: 690px) {
   body:has(.table-viewport) .topbar { flex-wrap: nowrap; gap: 5px; }
   body:has(.table-viewport) .brand { font-size: .78rem; letter-spacing: 0; gap: 3px; }
@@ -748,4 +749,14 @@ body:has(.table-viewport) { height: 100dvh; min-height: 0; overflow: hidden; dis
   .table-viewport .own-cards, .table-viewport .table-surface:has(.settlement:not([hidden])) .own-cards { --card-width: 48px; }
   .room-shell:has(.table-viewport) .action-row { gap: 3px; }
   .room-shell:has(.table-viewport) .action-row .button { padding-inline: 5px; min-width: 40px; font-size: .75rem; }
+  .room-shell:has(.table-viewport) { grid-template-rows: auto minmax(0, 1fr) 142px; }
+  .room-shell:has(.table-viewport) .action-dock { padding: 6px 8px; }
+  .room-shell:has(.table-viewport) .raise-editor { padding-top: 4px; }
+  .room-shell:has(.table-viewport) .raise-adjust { margin-top: 4px; }
+  .mobile-room-tools { display: flex; grid-column: 1 / -1; grid-row: 3; justify-content: flex-end; gap: 6px; height: 25px; }
+  .room-shell .mobile-room-tools #history-open,
+  .room-shell .mobile-room-tools .settlement-tools { position: static; }
+  .room-shell .mobile-room-tools button { min-height: 24px; font-size: .65rem; padding: 1px 5px; }
+  .table-viewport .seat-name { font-size: .78rem; }
+  .table-viewport .seat-stack { font-size: .9rem; }
 }

@@ -1,5 +1,5 @@
 import { createRoomEffects } from "./room-effects.js?v=20261116-5";
-import { setupRoomLayout } from "./room-layout.js?v=20261116-5";
+import { setupRoomLayout } from "./room-layout.js?v=20261117-1";
 import { raisePresets } from "./raise-presets.js?v=20261114-1";
 import { showdownHand } from "./showdown.js?v=20261115-6";
 import { showdownProfile, showdownRhythm } from "./showdown-effects.js?v=20261116-5";
@@ -77,12 +77,12 @@ const opponentPositions = {
 const mobilePositions = {
   2: [[50, 16]],
   3: [[26, 18], [74, 18]],
-  4: [[19, 30], [50, 13], [81, 30]],
-  5: [[18, 29], [35, 13], [65, 13], [82, 29]],
-  6: [[17, 29], [20, 13], [50, 13], [80, 13], [83, 29]],
-  7: [[19, 78], [17, 32], [30, 13], [70, 13], [83, 32], [81, 78]],
-  8: [[19, 78], [17, 32], [19, 13], [50, 13], [81, 13], [83, 32], [81, 78]],
-  9: [[19, 78], [17, 32], [13, 13], [38, 13], [62, 13], [87, 13], [83, 32], [81, 78]],
+  4: [[19, 38], [50, 13], [81, 38]],
+  5: [[18, 38], [35, 13], [65, 13], [82, 38]],
+  6: [[17, 38], [20, 13], [50, 13], [80, 13], [83, 38]],
+  7: [[19, 82], [17, 38], [30, 13], [70, 13], [83, 38], [81, 82]],
+  8: [[19, 82], [17, 38], [19, 13], [50, 13], [81, 13], [83, 38], [81, 82]],
+  9: [[19, 82], [17, 38], [13, 13], [38, 13], [62, 13], [87, 13], [83, 38], [81, 82]],
 };
 
 function viewerSeat(snapshot = state) {
@@ -371,9 +371,7 @@ function positionSeat(node, seatIndex) {
   node.style.setProperty("--desk-x", `${desktop[0]}%`);
   node.style.setProperty("--desk-y", `${desktop[1]}%`);
   node.style.setProperty("--mobile-x", `${mobile[0]}%`);
-  // Reserve room for public cards throughout the hand so seats never jump at showdown.
-  const mobileY = mobile[1] >= 29 && mobile[1] <= 32 ? 38 : mobile[1];
-  node.style.setProperty("--mobile-y", `${mobileY}%`);
+  node.style.setProperty("--mobile-y", `${mobile[1]}%`);
 }
 
 function renderSeats(result = currentResult(), previous = null) {
