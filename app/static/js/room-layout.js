@@ -26,6 +26,23 @@ export function setupRoomLayout(app) {
   const settlementTools = app.querySelector('#settlement-tools');
   const dock = app.querySelector('.action-dock');
   const mobileTools = app.querySelector('.mobile-room-tools');
+  const fullscreen = app.querySelector('#fullscreen-toggle');
+  if (document.fullscreenEnabled) {
+    fullscreen.hidden = false;
+    document.addEventListener('fullscreenchange', () => {
+      fullscreen.textContent = document.fullscreenElement ? '退出全屏' : '全屏';
+    });
+    fullscreen.addEventListener('click', async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch {
+        const feedback = app.querySelector('#room-feedback');
+        feedback.textContent = '浏览器未能切换全屏，请重试。';
+        feedback.hidden = false;
+      }
+    });
+  }
   function positionTools() {
     const target = mobile.matches ? mobileTools : dock;
     target.append(settlementTools, historyButton);
