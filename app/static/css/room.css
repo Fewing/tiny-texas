@@ -749,8 +749,10 @@ body:has(.table-viewport) { height: 100dvh; min-height: 0; overflow: hidden; dis
   .table-viewport .own-cards, .table-viewport .table-surface:has(.settlement:not([hidden])) .own-cards { --card-width: 48px; }
   .room-shell:has(.table-viewport) .action-row { gap: 3px; }
   .room-shell:has(.table-viewport) .action-row .button { padding-inline: 5px; min-width: 40px; font-size: .75rem; }
-  .room-shell:has(.table-viewport) { grid-template-rows: auto minmax(0, 1fr) 142px; }
-  .room-shell:has(.table-viewport) .action-dock { padding: 6px 8px; }
+  .room-shell:has(.table-viewport) { grid-template-rows: auto minmax(0, 1fr) 128px; }
+  .room-shell:has(.table-viewport) .action-dock { padding: 4px 8px; }
+  .room-shell:has(.table-viewport) .action-controls { grid-auto-rows: auto; grid-template-rows: 40px; gap: 4px; }
+  .room-shell:has(.table-viewport) .action-status strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .room-shell:has(.table-viewport) .raise-editor { padding-top: 4px; }
   .room-shell:has(.table-viewport) .raise-adjust { margin-top: 4px; }
   .mobile-room-tools { display: flex; grid-column: 1 / -1; grid-row: 3; justify-content: flex-end; gap: 6px; height: 25px; }

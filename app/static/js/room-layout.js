@@ -5,10 +5,15 @@ export function setupRoomLayout(app) {
   const table = app.querySelector('#table-surface');
   const mobile = matchMedia('(max-width: 690px)');
   function fit() {
-    const width = mobile.matches ? viewport.clientWidth - 16 : 1200;
-    const height = mobile.matches ? Math.max(540, viewport.clientHeight - 32) : 720;
-    // Keep a small gutter for card outlines and reveal animations above top seats.
-    const scale = Math.min((viewport.clientWidth - 16) / width, (viewport.clientHeight - 32) / height);
+    const portraitLayout = mobile.matches;
+    const availableWidth = viewport.clientWidth - (portraitLayout ? 4 : 16);
+    const availableHeight = viewport.clientHeight - (portraitLayout ? 20 : 32);
+    if (availableWidth <= 0 || availableHeight <= 0) return;
+    const height = portraitLayout ? Math.max(520, availableHeight) : 720;
+    const scale = portraitLayout ? availableHeight / height :
+      Math.min(availableWidth / 1200, availableHeight / height);
+    // Short screens still use the full table width after scaling the cards and seats.
+    const width = portraitLayout ? availableWidth / scale : 1200;
     table.style.width = `${width}px`;
     table.style.height = `${height}px`;
     table.style.transform = `translate(-50%, -50%) scale(${scale})`;
